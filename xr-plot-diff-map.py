@@ -3,19 +3,18 @@ import sys
 import argparse
 import glob
 import re
+from collections import ChainMap
 
 import numpy      as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import xarray     as xr
 
-import cartopy.crs as ccrs
 import cartopy as cartopy
+import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
 import yaml
-from collections import ChainMap
-
 
 xr.set_options(use_new_combine_kwarg_defaults=True)
 
@@ -92,6 +91,12 @@ parser.add_argument(
 parser.add_argument('--dpi',
     help='resoution for saved raster figures', type=int, default=150)
 args=parser.parse_args()
+
+# ===-----------------------------------------------------------------------===
+if args.verb > 0:
+    print('using pakages:')
+    for package in np,xr,yaml,mpl,cartopy:
+         print('    {:>12} : {}'.format(package.__name__,package.__version__))
 
 # ===-----------------------------------------------------------------------===
 # read configuration file

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import sys
-# import optparse
 import argparse
 import glob
 import re
+from collections import ChainMap
 
 import numpy      as np
 import matplotlib as mpl
@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import xarray as xr
 
 import yaml
-from collections import ChainMap
 
 # import plotutils
 
@@ -134,6 +133,7 @@ def die(message,code=255) :
     print ('Error :: '+message)
     exit(code)
 
+# ===-----------------------------------------------------------------===
 def coordToFloat(str):
     '''
     Given a string, possibly with one of the S, N, E, or W suffixes
@@ -156,7 +156,7 @@ def coordToFloat(str):
           x = -x
         return x
 
-
+# ===-----------------------------------------------------------------===
 def openFiles(files):
     '''
     Given list of patterns, open files and return Xarray data set
@@ -184,6 +184,7 @@ def openFiles(files):
 #     return xr.open_mfdataset(fileNames,decode_times=timeCoder,data_vars='minimal')
     return xr.open_mfdataset(fileNames,decode_times=timeCoder)
 
+# ===-----------------------------------------------------------------===
 def areaName(var):
     '''
     Given xarray DataArray, try to find associated are in cell_measures attribute
@@ -198,10 +199,12 @@ def areaName(var):
         die(f'"cell_measures : area" not found in attributes of variabe "{varname}"')
     return m.group(1)
 
+# ===-----------------------------------------------------------------===
 def report(message, verb=0):
     ''' prints message if current level of verbosity is high enough '''
     if (args.verb>verb) : print(message)
 
+# ===-----------------------------------------------------------------===
 def regionStr(region):
     def coordStr(lat):
         if lat == 0:
@@ -215,7 +218,6 @@ def regionStr(region):
 
 # ===-----------------------------------------------------------------===
 # parse command-line arguments
-
 """
 YAML plot configuration file may have two sections:
 
@@ -271,7 +273,7 @@ plots:
 """
 
 parser = argparse.ArgumentParser(description='plot something')
-parser.add_argument('--verbose', dest='verb',
+parser.add_argument('-v', '--verbose', dest='verb',
     help='increase verbosity', action='count', default=1)
 parser.add_argument(
     '-f','--file', metavar='FILENAME.yaml',
@@ -280,6 +282,13 @@ parser.add_argument(
     '-s','--save', metavar='FILENAME',
     help='save figure instead of plotting it on screen.')
 args=parser.parse_args()
+
+# ===-----------------------------------------------------------------------===
+# print package versions
+if args.verb > 0:
+    print('using pakages:')
+    for package in np,xr,yaml,mpl:
+         print('    {:>12} : {}'.format(package.__name__,package.__version__))
 
 
 # ===-----------------------------------------------------------------===
@@ -339,6 +348,7 @@ def titleString(keys,env0,env):
         if 'long_name' in keys: s.append(f'({env["long_name"]})')
         return ' '.join(s)
 
+# ===-----------------------------------------------------------------===
 def unitString(keys,env0,env):
     if 'units' in env0:
         return env0['units']
@@ -347,6 +357,7 @@ def unitString(keys,env0,env):
     else:
         return ''
 
+# ===-----------------------------------------------------------------===
 def labelString(keys,env):
     if 'label' in env:
         return env['label']
@@ -358,6 +369,7 @@ def labelString(keys,env):
         if 'var'    in keys: s.append(f'of {env["var"]}')
         return ' '.join(s)
 
+# ===-----------------------------------------------------------------===
 for line in lineList:
     print(line)
     line['line'].set_label(labelString(labelKeys,line))
