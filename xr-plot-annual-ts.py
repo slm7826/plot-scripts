@@ -276,11 +276,11 @@ parser = argparse.ArgumentParser(description='plot something')
 parser.add_argument('-v', '--verbose', dest='verb',
     help='increase verbosity', action='count', default=1)
 parser.add_argument(
-    '-f','--file', metavar='FILENAME.yaml',
-    help='plot configuration file, in YAML')
-parser.add_argument(
     '-s','--save', metavar='FILENAME',
-    help='save figure instead of plotting it on screen.')
+    help='save plot to file (pdf, png, ...) instead of plotting it on screen.')
+parser.add_argument('file', metavar='FILENAME.yaml',
+    help='plot configuration file, in yaml format',
+    type=argparse.FileType('r'), default=sys.stdin)
 args=parser.parse_args()
 
 # ===-----------------------------------------------------------------------===
@@ -293,11 +293,7 @@ if args.verb > 0:
 
 # ===-----------------------------------------------------------------===
 # read configuration file
-if args.file:
-    f = open(args.file, 'r')
-else:
-    f = sys.stdin
-config = yaml.safe_load(f)
+config = yaml.safe_load(args.file)
 
 # ===-----------------------------------------------------------------===
 # create "environment" for plots with default and hard-coded parameters
