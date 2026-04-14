@@ -50,16 +50,6 @@ def openFiles(files):
     timeCoder = xr.coders.CFDatetimeCoder(use_cftime=True)
     return xr.open_mfdataset(fileNames,decode_times=timeCoder)
 
-# ===-----------------------------------------------------------------------===
-def parseRange(r):
-    '''
-    Given input string in the form "YYYY:YYYY", returns a tuple of integers
-    '''
-    r1 = re.sub('\s+','',r) # remove all white space
-    m  = re.match(r'(\d+):(\d+)',r1)
-    if not m:
-        raise ValueError(f'argument of parseRange must be a string in form "YYYY:YYYY", got "{r}"')
-    return (int(m.group(1)),int(m.group(2)))
 
 # ===-----------------------------------------------------------------------===
 def titleText(e0,e1):
@@ -165,7 +155,7 @@ for exp in config['experiments']:
 
     # select the range of years
     if 'years' in env:
-        ys,ye = parseRange(env['years'])
+        ys,ye = ut.parseRange(env['years'])
     else:
         ys,ye = (int(time.dt.year[0]),int(time.dt.year[-1]))
     expDict['years'] = (ys,ye)

@@ -36,3 +36,17 @@ def parseLevels(s):
     if len(lev) < 2:
         raise ValueError(f'Level spec must result in 2 or more layers, got {len(lev)} from "{s}"')
     return sorted(list(lev))
+
+# ===-----------------------------------------------------------------------===
+def parseRange(r):
+    '''
+    Given input string in the form "YYYY:YYYY", returns a tuple of integers
+    '''
+    r1 = re.sub('\s+','',r) # remove all white space
+    m  = re.fullmatch(r'(\d+):(\d+)',r1)
+    if not m:
+        raise ValueError(f'argument of parseRange must be a string in form "YYYY:YYYY", got "{r}"')
+    start,stop=int(m.group(1)),int(m.group(2))
+    if start>stop:
+        start,stop=stop,start
+    return (start,stop)
