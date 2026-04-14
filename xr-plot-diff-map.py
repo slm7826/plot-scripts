@@ -49,21 +49,24 @@ def openFiles(files):
     timeCoder = xr.coders.CFDatetimeCoder(use_cftime=True)
     return xr.open_mfdataset(fileNames,decode_times=timeCoder)
 
-def parse_levels(s):
+def parseLevels(s):
     '''
-    Given a string in form "0:1:0.1,-10:10:1,0.25,-0.25,del(0)" returns a list of
-    level values
+    Given a string in form "0:1:0.1,-10:10:1,0.25,-0.25,del(0)" returns
+    a tuple of three values: (sorted level values, minimum, and maxium).
+    Note that the input string is processed left-to-right, so the effect
+    of del() may depend on the location in the string.
     '''
     if not s:
         return (None,None,None)
-    l=re.split(r'\s*,\s*',s)
+    s1 = re.sub(r'\s+','',s) # remove all spaces
+    l=re.split(r'\s*,\s*',s1)
     lev=set()
     for e in l:
-        m = re.match(r'\s*del\s*\(([^)]+)\)',e)
+        m = re.match(r'del\(([^)]+)\)',e)
         if m:
             lev.discard(float(m.group(1)))
         else:
-            e = re.split(r'\s*:\s*',e)
+            e = re.split(r':',e)
             if len(e) == 1 :
                 lev.add(float(e[0]))
             else:
@@ -117,25 +120,61 @@ for item in env0:
     print(f'{item:>10} : {env0[item]}')
 
 # ===-----------------------------------------------------------------------===
-# accumulate and process data
-maps = list(); dsets = list()
-for pars in config['experiments']:
-    env = env0.new_child(pars)
-    # load file data
-    src = openFiles(env['files'])
-    print('###### dataset:\n',src)
-    print(src)
-    # do the averaging
-    varName = env['var']
-    var = src[varName]
-    print('###### variable:\n',var)
-    ave = var.mean(dim=var.dims[0],keep_attrs=True) # assuming the first dimension is time
-    print('###### average:\n',ave)
-    dsets.append(src)
-    maps.append(ave)
+def parseRange(r):
+    '''
+    Given input string in the form "YYYY:YYYY", returns a tuple of integers
+    '''
+    r1 = re.sub('\s+','',r) # remove all white space
+    m  = re.match(r'(\d+):(\d+)',r1)
+    if not m:
+        raise ValueError(f'argument of parseRange must be a string in form "YYYY:YYYY", got "{r}"')
+    return (int(m.group(1)),int(m.group(2)))
 
-# TODO: check that we have two and only two data sets
-diff = (maps[1]-maps[0])*env0['scale']
+# check that we have two and only two data sets
+if len(config['experiments']) != 2:
+    die(f'Need two experiments in config YAML, got {len(config["experiments"])}')
+
+# ===-----------------------------------------------------------------------===
+# accumulate and process data
+expList = list()
+for exp in config['experiments']:
+    # create new nested environment of parameters for current experiment:
+    # experiment>defaults>builtin
+    env = env0.new_child(exp)
+
+    # create a dictionary to hold relevant information for plots and information lines
+    expDict={}
+
+    # load data from a set of files
+    print(env)
+    print(env['files'])
+    expDict['ds'] = ds = openFiles(env['files'])
+
+    # pick the variable by name
+    varName = env['var']
+    if not varName:
+        die('variable name not specified')
+    expDict['var'] = var = ds[varName]
+
+    # TODO: do not assume that time is the first dimension of the variable
+    time = var.coords[var.dims[0]]
+
+    # select the range of years
+    if 'years' in env:
+        ys,ye = parseRange(env['years'])
+    else:
+        ys,ye = (int(time.dt.year[0]),int(time.dt.year[-1]))
+    expDict['years'] = (ys,ye)
+    var1 = var.sel(time=slice(f'{ys}-01-01',f'{ye+1}-01-01'))
+
+    # calculate the time average
+    # TODO: use appropriate month lengths fro averaging
+    expDict['ave'] = var1.mean(dim=time.name, keep_attrs=True, skipna=True) * env['scale']
+
+    # form the list of the experiments
+    expList.append(expDict)
+
+diff = (expList[1]['ave']-expList[0]['ave'])
 
 # ===-----------------------------------------------------------------------===
 # plotting the difference
@@ -150,7 +189,7 @@ ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
              linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
 cmap=plt.get_cmap(env['colormap'])
 
-levels,vmin,vmax=parse_levels(env['levels'])
+levels,vmin,vmax=parseLevels(env['levels'])
 if levels:
     norm = mpl.colors.BoundaryNorm(levels, ncolors=cmap.N, extend='both')
 else:
@@ -174,13 +213,13 @@ title = env0['title']
 if not title:
 #     title = '{} - {},  years {:04d}-{:04d}'.format(
 #           dsets[1].title, dsets[0].title, years[0],years[1])
-    title = f'{dsets[1].title} - {dsets[0].title}'
+    title = f'{expList[1]["ds"].title} - {expList[0]["ds"].title}'
 if title.lower() != 'none':
     ax.set_title(title,y=1.07)
 
 # add the name, long name, and units of the variable to the plot
 left = 0.0; top = 1.01
-v = maps[0]
+v = expList[0]['var']
 ax.text(left, top, f'\n{v.name} ({v.long_name}), {v.units}',
         fontsize='small',
         horizontalalignment='left',

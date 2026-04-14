@@ -3,15 +3,43 @@
 Example of plotting annual mean near-surface temperature difference between 10 years
 of two experiments, using here-doc feature of `bash` shell:
 ```bash
-xr-plot-diff-map.py -v - <<EOF
+./xr-plot-diff-map.py -v - <<EOF
 defaults:
   var: t_ref
   levels: "-2:2:0.2"
-  colormap: RdYlBu_r
+  colormap: RdBu_r
   colorbar: true
 experiments:
   - files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
   - files:    "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+EOF
+```
+
+Difference between two periods
+```bash
+./xr-plot-diff-map.py -v - <<EOF
+defaults:
+  var: t_ref
+  levels: "-2:2:0.2"
+  colormap: RdBu_r
+  colorbar: true
+experiments:
+  - files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+    years:    "2008:2009"
+  - files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+    years:    "2000:2002"
+EOF
+
+./xr-plot-diff-map.py -v - <<EOF
+defaults:
+  var: t_ref
+  levels: "-2:2:0.2"
+  colormap: RdBu_r
+  colorbar: true
+  files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+experiments:
+  - years:    "2008:2009"
+  - years:    "2000:2002"
 EOF
 ```
 
