@@ -51,10 +51,10 @@ def openFiles(files):
 
 def parseLevels(s):
     '''
-    Given a string in form "0:1:0.1,-10:10:1,0.25,-0.25,del(0)" returns
-    a tuple of three values: (sorted level values, minimum, and maxium).
+    Given a string in the form "0:1:0.1,-10:10:1,0.25,-0.25,del(0)”, returns
+    a tuple of three values: (sorted level values, minimum, and maximum).
     Note that the input string is processed left-to-right, so the effect
-    of del() may depend on the location in the string.
+    of del() may depend on its location in the input string.
     '''
     if not s:
         return (None,None,None)
@@ -74,6 +74,40 @@ def parseLevels(s):
                     lev.add(round(f,6))
                 lev.add(float(e[1]))
     return (sorted(list(lev)),min(lev),max(lev))
+
+# ===-----------------------------------------------------------------------===
+def parseRange(r):
+    '''
+    Given input string in the form "YYYY:YYYY", returns a tuple of integers
+    '''
+    r1 = re.sub('\s+','',r) # remove all white space
+    m  = re.match(r'(\d+):(\d+)',r1)
+    if not m:
+        raise ValueError(f'argument of parseRange must be a string in form "YYYY:YYYY", got "{r}"')
+    return (int(m.group(1)),int(m.group(2)))
+
+# ===-----------------------------------------------------------------------===
+def titleText(e0,e1):
+    '''
+    Given two dictionaries with experiment parameters, construct a
+    reasonable title text describing the difference map.
+    '''
+    def dsTitle(ds,fallback):
+        if 'title' in ds.attrs:
+            return ds.title
+        else:
+            return fallback
+
+    if e1['years'] == e0['years']:
+        # comparing the same period
+        ys,ye = e0['years']
+        t = f'{dsTitle(e1["ds"],"exp1")} - {dsTitle(e0["ds"],"exp0")} [{ys}:{ye}]'
+    else:
+        # diffrent periods
+        ys0,ye0 = e0['years']
+        ys1,ye1 = e1['years']
+        t = f'{dsTitle(e1["ds"],"exp1")}[{ys1}:{ye1}] - {dsTitle(e0["ds"],"exp0")}[{ys0}:{ye0}]'
+    return t
 
 class ChainMap1(ChainMap):
     'Variant of ChainMap that returns None if item not present'
@@ -101,38 +135,35 @@ if args.verb > 0:
     for package in np,xr,yaml,mpl,cartopy:
          print('    {:>12} : {}'.format(package.__name__,package.__version__))
 
-# ===-----------------------------------------------------------------------===
-# read configuration file
-config = yaml.safe_load(args.file)
 
 # ===-----------------------------------------------------------------------===
 # create "environment" for plots with default and hard-coded parameters
 # that can be overriden through the config file
-hardcoded = {
+defaults = {
     'figureWidth'  : 10.0,
     'figureHeight' : 5.0,
     'projection'   : 'PlateCarree',
     'colormap'     : 'rainbow',
     'scale'        : 1.0,
     }
-env0 = ChainMap1(config['defaults'],hardcoded)
-for item in env0:
-    print(f'{item:>10} : {env0[item]}')
+env0 = ChainMap1(defaults)
 
 # ===-----------------------------------------------------------------------===
-def parseRange(r):
-    '''
-    Given input string in the form "YYYY:YYYY", returns a tuple of integers
-    '''
-    r1 = re.sub('\s+','',r) # remove all white space
-    m  = re.match(r'(\d+):(\d+)',r1)
-    if not m:
-        raise ValueError(f'argument of parseRange must be a string in form "YYYY:YYYY", got "{r}"')
-    return (int(m.group(1)),int(m.group(2)))
+# read configuration file
+config = yaml.safe_load(args.file)
+
+# add configuration parameters to the environment (except 'experiments'
+# array, which will be handled later)
+env0 = env0.new_child({x: config[x] for x in config if x not in ['experiments']})
+
+# print configuration, for information
+if args.verb > 0:
+    for item in env0:
+        print(f'{item:>10} : {env0[item]}')
 
 # check that we have two and only two data sets
 if len(config['experiments']) != 2:
-    die(f'Need two experiments in config YAML, got {len(config["experiments"])}')
+    die(f'Need two experiments in configuration YAML, got {len(config["experiments"])}')
 
 # ===-----------------------------------------------------------------------===
 # accumulate and process data
@@ -146,8 +177,6 @@ for exp in config['experiments']:
     expDict={}
 
     # load data from a set of files
-    print(env)
-    print(env['files'])
     expDict['ds'] = ds = openFiles(env['files'])
 
     # pick the variable by name
@@ -174,7 +203,7 @@ for exp in config['experiments']:
     # form the list of the experiments
     expList.append(expDict)
 
-diff = (expList[1]['ave']-expList[0]['ave'])
+diff = expList[1]['ave'] - expList[0]['ave']
 
 # ===-----------------------------------------------------------------------===
 # plotting the difference
@@ -211,9 +240,7 @@ if env0['colorbar'] :
 # set the title of the plot
 title = env0['title']
 if not title:
-#     title = '{} - {},  years {:04d}-{:04d}'.format(
-#           dsets[1].title, dsets[0].title, years[0],years[1])
-    title = f'{expList[1]["ds"].title} - {expList[0]["ds"].title}'
+    title = titleText(expList[0],expList[1])
 if title.lower() != 'none':
     ax.set_title(title,y=1.07)
 
