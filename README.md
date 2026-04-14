@@ -32,7 +32,7 @@ Or equivalently:
 ```bash
 ./xr-plot-diff-map.py -v - <<EOF
 var: t_ref
-levels: "-2:2:0.2"
+levels: "-2:2:0.2 , del( 0.0 )"
 colormap: RdBu_r
 colorbar: true
 files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"

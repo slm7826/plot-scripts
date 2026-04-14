@@ -15,6 +15,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
 import yaml
+import utils as ut
 
 xr.set_options(use_new_combine_kwarg_defaults=True)
 
@@ -48,32 +49,6 @@ def openFiles(files):
 
     timeCoder = xr.coders.CFDatetimeCoder(use_cftime=True)
     return xr.open_mfdataset(fileNames,decode_times=timeCoder)
-
-def parseLevels(s):
-    '''
-    Given a string in the form "0:1:0.1,-10:10:1,0.25,-0.25,del(0)”, returns
-    a tuple of three values: (sorted level values, minimum, and maximum).
-    Note that the input string is processed left-to-right, so the effect
-    of del() may depend on its location in the input string.
-    '''
-    if not s:
-        return (None,None,None)
-    s1 = re.sub(r'\s+','',s) # remove all spaces
-    l=re.split(r'\s*,\s*',s1)
-    lev=set()
-    for e in l:
-        m = re.match(r'del\(([^)]+)\)',e)
-        if m:
-            lev.discard(float(m.group(1)))
-        else:
-            e = re.split(r':',e)
-            if len(e) == 1 :
-                lev.add(float(e[0]))
-            else:
-                for f in np.arange(float(e[0]),float(e[1]),float(e[2])):
-                    lev.add(round(f,6))
-                lev.add(float(e[1]))
-    return (sorted(list(lev)),min(lev),max(lev))
 
 # ===-----------------------------------------------------------------------===
 def parseRange(r):
@@ -218,9 +193,9 @@ ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
              linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
 cmap=plt.get_cmap(env['colormap'])
 
-levels,vmin,vmax=parseLevels(env['levels'])
-if levels:
-    norm = mpl.colors.BoundaryNorm(levels, ncolors=cmap.N, extend='both')
+if 'levels' in env:
+    levels = ut.parseLevels(env['levels'])
+    norm   = mpl.colors.BoundaryNorm(levels, ncolors=cmap.N, extend='both')
 else:
     norm = None
 
