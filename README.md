@@ -1,46 +1,65 @@
 # An eclectic collection of scripts for plotting model output
 
-Example of plotting annual mean near-surface temperature difference between 10 years
-of two experiments, using here-doc feature of `bash` shell:
+## Examples of using `xr-plot-diff-map.py`
+
+The examples below use here-doc feature of  Unix `bash` shell to keep
+all the information in one place, but they also can use the
+configuration stored in a yaml file.
+
+Plot annual mean near-surface temperature difference between 10 years
+of two experiments:
 ```bash
 ./xr-plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
-colorbar: true
 experiments:
   - files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
   - files:    "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
 EOF
 ```
 
-Difference between two periods
+Plot MAM difference between two experiments:
 ```bash
 ./xr-plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
-colorbar: true
+season: MAM
 experiments:
   - files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
-    years:    "2008:2009"
-  - files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
-    years:    "2000:2002"
+  - files:    "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
 EOF
 ```
-Or equivalently:
+
+Plot JJA-DJF difference for the same experiment:
 ```bash
 ./xr-plot-diff-map.py -v - <<EOF
 var: t_ref
-levels: "-2:2:0.2 , del( 0.0 )"
+levels: "-50:50:5"
 colormap: RdBu_r
-colorbar: true
 files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
 experiments:
-  - years:    "2008:2009"
-  - years:    "2000:2002"
+  - season: DJF
+  - season: JJA
 EOF
 ```
+
+Plot difference between two periods, no colorbar:
+```bash
+./xr-plot-diff-map.py -v - <<EOF
+var: t_ref
+levels: "-2:2:0.2"
+colormap: RdBu_r
+colorbar: No
+files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+experiments:
+    - years:    "2008:2009"
+    - years:    "2000:2002"
+EOF
+```
+
+### Examples of plotting time series
 
 Example of plotting time series of annual total vegetation carbon amount
 from two experiments, using here-doc feature of `bash` shell:
