@@ -24,6 +24,7 @@ def report(message, verb=0):
     ''' prints message if current level of verbosity is high enough '''
     if (args.verb>verb) : print(message)
 
+# ===-----------------------------------------------------------------------===
 def openFiles(files):
     '''
     Given list of patterns, open files and return Xarray data set
@@ -63,15 +64,26 @@ def titleText(e0,e1):
         else:
             return fallback
 
+    # Form the information string for the range of years.
     if e1['years'] == e0['years']:
         # comparing the same period
         ys,ye = e0['years']
-        t = f'{dsTitle(e1["ds"],"exp1")} - {dsTitle(e0["ds"],"exp0")} [{ys}:{ye}]'
+        years0 = years1 = ''; yearsA = f'[{ys}:{ye}]'
     else:
-        # diffrent periods
-        ys0,ye0 = e0['years']
-        ys1,ye1 = e1['years']
-        t = f'{dsTitle(e1["ds"],"exp1")}[{ys1}:{ye1}] - {dsTitle(e0["ds"],"exp0")}[{ys0}:{ye0}]'
+        # different periods
+        ys,ye = e0['years']; years0 = f'[{ys}:{ye}]'
+        ys,ye = e1['years']; years1 = f'[{ys}:{ye}]'
+        yearsA = ''
+
+    # form the information string for seasons
+    if e1['season'] == e0['season']:
+        # comparing the same season
+        season0 = season1 = ''; seasonA = f',{e0["season"]}'
+    else:
+        season0 = f',{e0["season"]}'
+        season1 = f',{e1["season"]}'
+        seasonA = ''
+    t = f'{dsTitle(e1["ds"],"exp1")}{years1}{season1} - {dsTitle(e0["ds"],"exp0")}{years0}{season0} {yearsA}{seasonA}'
     return t
 
 class ChainMap1(ChainMap):
@@ -110,6 +122,7 @@ defaults = {
     'projection'   : 'PlateCarree',
     'colormap'     : 'rainbow',
     'scale'        : 1.0,
+    'season'       : 'ANN'
     }
 env0 = ChainMap1(defaults)
 
@@ -159,10 +172,13 @@ for exp in config['experiments']:
     else:
         ys,ye = (int(time.dt.year[0]),int(time.dt.year[-1]))
     expDict['years'] = (ys,ye)
-    var1 = var.sel(time=slice(f'{ys}-01-01',f'{ye+1}-01-01'))
+    expDict['season'] = env['season']
+    months = ut.monthsInSeason(env['season'])
+    var0 = var.sel(time=slice(f'{ys}-01-01',f'{ye+1}-01-01'))
+    var1 = var0.where(time.dt.month.isin(months),drop=True)
 
     # calculate the time average
-    # TODO: use appropriate month lengths fro averaging
+    # TODO: use appropriate month lengths for averaging
     expDict['ave'] = var1.mean(dim=time.name, keep_attrs=True, skipna=True) * env['scale']
 
     # form the list of the experiments
