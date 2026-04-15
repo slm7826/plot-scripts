@@ -55,13 +55,17 @@ def parseRange(r):
 # ===-----------------------------------------------------------------------===
 def monthsInSeason(seasonName):
     '''
-    Given the symbolic name of a season, return the set of (1-based)
+    Given the symbolic name of a season, return the list of (1-based)
     months numbers that belong to this season. Season name can be
     'ANNUAL', 'ANN', or a string of contiguous months initials, e.g.
     'DJF', 'JAS', 'SO', 'JJAS'. Season names are case insensitive;
     spaces are ignored.
 
     After Fabien's idea and implementation.
+
+    Note that to be useful in xarray "isin" selector, the argument must
+    be array-like: this is why we return a list, and not a more efficient
+    set.
     '''
     if not isinstance(seasonName, str):
         raise ValueError(f"seasonName must be a string, got {type(seasonName)}")
@@ -73,7 +77,7 @@ def monthsInSeason(seasonName):
         )
 
     if key in {'ANNUAL','ANN'}:
-        return set(range(1,13))
+        return list(range(1,13))
 
     month_initials = 'JFMAMJJASOND'
     doubled = month_initials * 2
@@ -83,4 +87,4 @@ def monthsInSeason(seasonName):
         raise ValueError(
             f"Unsupported season selector '{seasonName}'. Use 'annual' or contiguous month initials like 'SO', 'JAS', 'DJF'."
         )
-    return {(start + i) % 12 + 1 for i in range(len(key))}
+    return [(start + i) % 12 + 1 for i in range(len(key))]
