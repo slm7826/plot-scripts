@@ -42,7 +42,7 @@ def parseRange(r):
     '''
     Given input string in the form "YYYY:YYYY", returns a tuple of integers
     '''
-    r1 = re.sub('\s+','',r) # remove all white space
+    r1 = re.sub(r'\s+','',r) # remove all white space
     m  = re.fullmatch(r'(\d+):(\d+)',r1)
     if not m:
         raise ValueError(f'argument of parseRange must be a string in form "YYYY:YYYY", got "{r}"')
@@ -50,3 +50,37 @@ def parseRange(r):
     if start>stop:
         start,stop=stop,start
     return (start,stop)
+
+
+# ===-----------------------------------------------------------------------===
+def monthsInSeason(seasonName):
+    '''
+    Given the symbolic name of a season, return the set of (1-based)
+    months numbers that belong to this season. Season name can be
+    'ANNUAL', 'ANN', or a string of contiguous months initials, e.g.
+    'DJF', 'JAS', 'SO', 'JJAS'. Season names are case insensitive;
+    spaces are ignored.
+
+    After Fabien's idea and implementation.
+    '''
+    if not isinstance(seasonName, str):
+        raise ValueError(f"seasonName must be a string, got {type(seasonName)}")
+
+    key = re.sub(r'\s+','',seasonName).upper() # remove all white space and convert to upper case
+    if len(key) < 2:
+        raise ValueError(
+            f"Unsupported season selector '{seasonName}'. Use 'annual' or contiguous month initials like 'SO', 'JAS', 'DJF'."
+        )
+
+    if key in {'ANNUAL','ANN'}:
+        return set(range(1,13))
+
+    month_initials = 'JFMAMJJASOND'
+    doubled = month_initials * 2
+    start = doubled.find(key)
+
+    if start == -1 or start >= 12:
+        raise ValueError(
+            f"Unsupported season selector '{seasonName}'. Use 'annual' or contiguous month initials like 'SO', 'JAS', 'DJF'."
+        )
+    return {(start + i) % 12 + 1 for i in range(len(key))}
