@@ -121,6 +121,7 @@ defaults = {
     'figureHeight' : 5.0,
     'projection'   : 'PlateCarree',
     'colormap'     : 'rainbow',
+    'colorbar'     : True,
     'scale'        : 1.0,
     'season'       : 'ANN'
     }
