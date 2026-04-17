@@ -86,6 +86,19 @@ def titleText(e0,e1):
     t = f'{dsTitle(e1["ds"],"exp1")}{years1}{season1} - {dsTitle(e0["ds"],"exp0")}{years0}{season0} {yearsA}{seasonA}'
     return t
 
+# ===-----------------------------------------------------------------===
+def getAreaName(var):
+    '''
+    Given xarray DataArray, try to find associated are in cell_measures attribute
+    var: xarray DataArra
+    '''
+
+    if 'cell_measures' in var.attrs:
+        m = re.search(r'\barea\s*:\s*(\w+)',var.cell_measures)
+        if m:
+            return m.group(1)
+    return None
+
 class ChainMap1(ChainMap):
     'Variant of ChainMap that returns None if item not present'
     def __missing__(self,key):
@@ -95,12 +108,12 @@ class ChainMap1(ChainMap):
 # parse command-line arguments
 parser = argparse.ArgumentParser(description='plot a map of differences between two experiments')
 parser.add_argument('-v','--verbose', dest='verb',
-    help='increase verbosity', action='count', default=1)
+    help='increase verbosity', action='count', default=0)
 parser.add_argument(
     '-s','--save', metavar='FILENAME',
     help='save plot to file (pdf, png, ...) instead of plotting it on screen.')
 parser.add_argument('--dpi',
-    help='resoution for saved raster figures', type=int, default=150)
+    help='resolution for saved raster figures', type=int, default=150)
 parser.add_argument('file', metavar='FILENAME.yaml',
     help='plot configuration file, in yaml format',
     type=argparse.FileType('r'), default=sys.stdin)
@@ -147,12 +160,12 @@ if len(config['experiments']) != 2:
 # ===-----------------------------------------------------------------------===
 # accumulate and process data
 expList = list()
-for exp in config['experiments']:
+for experiment in config['experiments']:
     # create new nested environment of parameters for current experiment:
     # experiment>defaults>builtin
-    env = env0.new_child(exp)
+    env = env0.new_child(experiment)
 
-    # create a dictionary to hold relevant information for plots and information lines
+    # Create a dictionary to hold relevant information for plots and information lines.
     expDict={}
 
     # load data from a set of files
@@ -181,11 +194,49 @@ for exp in config['experiments']:
     # calculate the time average
     # TODO: use appropriate month lengths for averaging
     expDict['ave'] = var1.mean(dim=time.name, keep_attrs=True, skipna=True) * env['scale']
+    # NOTE that var1 has all attributes, but they are lost after the
+    # multiplication (feature of xarray?)
+
+#     print('######### AVE')
+#     print(expDict['ave'])
 
     # form the list of the experiments
     expList.append(expDict)
 
 diff = expList[1]['ave'] - expList[0]['ave']
+
+# MARK: statistics
+# ===-----------------------------------------------------------------------===
+# calculate statistics to be displayed in the plot: spatial mean and RMS
+
+# find area: if it is present in the cell_measures, then use it (from "measures" data set),
+# otherwise calculate it from the grid cells
+ds  = expList[0]['ds'] # use first of the experiments to get the measures, assuming they are the same for both
+var = expList[0]['var']
+areaName = getAreaName(var)
+if areaName:
+    if env['statistics']['measureFile']:
+        measures = openFiles(env['statistics']['measureFile'])
+        area = measures[areaName]
+    else:
+        raise ValueError(f'No measure files specified, but they are required for calulation of statistics')
+else:
+    # compute area:
+    # TODO: display note that the area is computed
+    latb = ut.getBounds(ds,'lat')
+    lonb = ut.getBounds(ds,'lon')
+
+    rEarth = 6371.0e3
+    deg2rad = np.pi/180.0
+    area = rEarth**2 * (np.sin(latb[:,1]*deg2rad)-np.sin(latb[:,0]*deg2rad))*(lonb[:,1]-lonb[:,0])
+
+weightedDiff = diff.weighted(area)
+
+AVE = weightedDiff.mean().values
+STD = weightedDiff.std().values
+maskedDiff = np.ma.masked_invalid(diff.values)
+RMS = np.sqrt(np.ma.average(maskedDiff**2,weights=area.values))
+print(f'Average = {AVE:.5g}, RMS = {RMS:.5g}, STD = {STD:.5g}')
 
 # ===-----------------------------------------------------------------------===
 # plotting the difference
@@ -227,11 +278,16 @@ if title.lower() != 'none':
     ax.set_title(title,y=1.07)
 
 # add the name, long name, and units of the variable to the plot
-left = 0.0; top = 1.01
+left = 0.0; right=1.0; top = 1.01
 v = expList[0]['var']
 ax.text(left, top, f'\n{v.name} ({v.long_name}), {v.units}',
         fontsize='small',
         horizontalalignment='left',
+        verticalalignment='bottom',
+        transform=ax.transAxes)
+ax.text(right, top, f'AVE={AVE:.3g}, RMS={RMS:.3g}',
+        fontsize='small',
+        horizontalalignment='right',
         verticalalignment='bottom',
         transform=ax.transAxes)
 

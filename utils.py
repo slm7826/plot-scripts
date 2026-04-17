@@ -1,5 +1,6 @@
 import re
 import numpy as np
+import xarray as xr
 
 # ===-----------------------------------------------------------------------===
 def parseLevels(s):
@@ -37,6 +38,7 @@ def parseLevels(s):
         raise ValueError(f'Level spec must result in 2 or more layers, got {len(lev)} from "{s}"')
     return sorted(list(lev))
 
+
 # ===-----------------------------------------------------------------------===
 def parseRange(r):
     '''
@@ -50,6 +52,40 @@ def parseRange(r):
     if start>stop:
         start,stop=stop,start
     return (start,stop)
+
+
+# ===-----------------------------------------------------------------------===
+def getBounds(ds,coordName):
+    '''
+    Given an xarray data set and the name of a coordinate, returns an array of bound
+    for this coordinate variable.
+
+    The bounds are taken from the coordinate variable attributes, or
+    computed if not available.
+    '''
+    coord = ds[coordName]
+    # check that coordinate is 1D
+    if len(coord.shape) != 1:
+        raise ValueError('Coordinate "{coordName}" has {len(coord.shape)} dimensions, must be one-dimensional')
+
+    if 'bounds' in coord.attrs:
+        bounds = ds[coord.bounds]
+        if len(bounds.shape) != 2:
+            raise ValueError('Variable "{coordName}" attribute "bounds" points to variable "{bounds.name}" whose number of dimensions is not 2')
+        if bounds.shape[-1] != 2:
+            raise ValueError('variable "{coordName}" attribute "bounds" points to variable "{bounds.name}" whose second dimension length is not 2')
+        return bounds
+    # TODO: handle "edges" attribute that ferret adds to its data sets
+    else:
+        # calculate bounds from coordinates
+        varlen = coord.shape[0]
+        # TODO: handle time coordinate here: data type should be inherited from the coordinate. Can it be cftime?
+        bnds = np.zeros((varlen,2))
+        bnds[1:, 0] = (coord.values[0:-1]+coord.values[1:])/2.0
+        bnds[:-1,1] = bnds[1:, 0]
+        bnds[0,  0] = 2*coord[0]-bnds[1,0]
+        bnds[-1, 1] = 2*coord[-1]-bnds[-1,0]
+        return xr.DataArray(bnds, {coordName:coord, 'bnds':[1,2]})
 
 
 # ===-----------------------------------------------------------------------===

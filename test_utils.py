@@ -1,5 +1,7 @@
 import unittest
-import utils as ut
+import numpy  as np
+import xarray as xr
+import utils  as ut
 
 class TestParseLevels(unittest.TestCase):
 
@@ -53,6 +55,54 @@ class TestMonthsInSeason(unittest.TestCase):
             ut.monthsInSeason('J')
         with self.assertRaises(ValueError):
             ut.monthsInSeason('ABCD')
+
+class TestGetBounds(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        temp=[1.0, 1.0, 2.0, 2.0]
+
+        # create test data set without bounds attribute
+        cls.ds1 = xr.Dataset(
+            data_vars=dict(
+                temp = (['lon'],temp,{'units':'deg_C'})
+            ),
+            coords = dict(
+                lon=(["lon"], [0.5,1.5,2.5,3.5])
+            ),
+            attrs = {'title': 'Test data set'}
+        )
+
+        # create test data set with bounds attribute
+        bnds=[[0.1,1.0],[1.0,2.1],[2.0,3.0],[3.0,4.5]]
+        cls.ds2 = xr.Dataset(
+            data_vars = dict(
+                temp     = (['lon'],temp,{'units':'deg_C'}),
+                lon_bnds = (['lon','bnds'],bnds)
+            ),
+            coords = dict(
+                lon=(["lon"], [0.5,1.5,2.5,3.5],{'bounds':'lon_bnds'})
+            ),
+            attrs = {'title': 'Test data set'}
+        )
+        # self.ds2.info()
+
+
+    def test_noBounds(self):
+        ''' Test coordinate bounds without "bnds" attribute'''
+        bounds = ut.getBounds(self.ds1,'lon').values
+        np.testing.assert_array_equal(bounds[:,0],[0.0,1.0,2.0,3.0],verbose=True)
+        np.testing.assert_array_equal(bounds[:,1],[1.0,2.0,3.0,4.0],verbose=True)
+
+    def test_withBounds(self):
+        ''' Test coordinate bounds with "bnds" attribute'''
+        bounds = ut.getBounds(self.ds2,'lon').values
+        np.testing.assert_array_equal(bounds[:,0],[0.1,1.0,2.0,3.0],verbose=True)
+        np.testing.assert_array_equal(bounds[:,1],[1.0,2.1,3.0,4.5],verbose=True)
+
+    def test_errors(self):
+        ''' Test error conditions '''
+        with self.assertRaises(KeyError):
+            bounds = ut.getBounds(self.ds1,'lat').values
 
 if __name__ == '__main__':
     unittest.main()
