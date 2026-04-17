@@ -51,6 +51,13 @@ class TestMonthsInSeason(unittest.TestCase):
         self.assertEqual(ut.monthsInSeason('JJA'),[6,7,8])
         self.assertEqual(ut.monthsInSeason('SON'),[9,10,11])
         self.assertEqual(ut.monthsInSeason('JJAS'),[6,7,8,9])
+
+        self.assertEqual(ut.monthsInSeason('Jul'),[7])
+        self.assertEqual(ut.monthsInSeason('July'),[7])
+
+        self.assertEqual(ut.monthsInSeason('DEC'),[12])
+        self.assertEqual(ut.monthsInSeason('December'),[12])
+
         with self.assertRaises(ValueError):
             ut.monthsInSeason('J')
         with self.assertRaises(ValueError):

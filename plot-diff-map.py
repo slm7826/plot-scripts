@@ -19,6 +19,12 @@ import utils as ut
 
 xr.set_options(use_new_combine_kwarg_defaults=True)
 
+# TODO: Add configuration verification
+# TODO: Add var titles and units to configuration
+# TODO: Add time operations average (default), max, min, average annual max, average annual mean
+# TODO: Use months lengths in time averaging
+# TODO: Use contiguous seasons (e.g. DJF is not split across two years)
+# TODO: Add ability to save data
 
 def report(message, verb=0):
     ''' prints message if current level of verbosity is high enough '''

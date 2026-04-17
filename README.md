@@ -1,5 +1,11 @@
 # An eclectic collection of scripts for plotting model output
 
+
+To run unit tests:
+```bash
+python -m unittest
+```
+
 ## Examples of using `plot-diff-map.py`
 
 The examples below use here-doc feature of  Unix `bash` shell to keep
@@ -13,6 +19,18 @@ of two experiments:
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
+experiments:
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+  - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+EOF
+```
+
+```bash
+./plot-diff-map.py -v - <<EOF
+var: t_ref
+levels: "-2:2:0.2"
+colormap: RdBu_r
+season: December
 experiments:
   - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
   - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"

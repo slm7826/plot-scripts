@@ -91,11 +91,11 @@ def getBounds(ds,coordName):
 # ===-----------------------------------------------------------------------===
 def monthsInSeason(seasonName):
     '''
-    Given the symbolic name of a season, return the list of (1-based)
-    months numbers that belong to this season. Season name can be
-    'ANNUAL', 'ANN', or a string of contiguous months initials, e.g.
-    'DJF', 'JAS', 'SO', 'JJAS'. Season names are case insensitive;
-    spaces are ignored.
+    Given the symbolic name of a season, return the list of (1-based) months
+    numbers that belong to this season. Season name can be 'ANNUAL', 'ANN', or a
+    string of contiguous months initials, e.g. 'DJF', 'JAS', 'SO', 'JJAS', or a
+    month name, e.g 'APR' or April. Season names are case insensitive; spaces are
+    ignored.
 
     After Fabien's idea and implementation.
 
@@ -114,6 +114,16 @@ def monthsInSeason(seasonName):
 
     if key in {'ANNUAL','ANN'}:
         return list(range(1,13))
+
+    monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+                  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+    if key in monthNames:
+        return [monthNames.index(key) + 1]
+
+    monthNames = ['JANUARY','FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+                  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+    if key in monthNames:
+        return [monthNames.index(key) + 1]
 
     month_initials = 'JFMAMJJASOND'
     doubled = month_initials * 2
