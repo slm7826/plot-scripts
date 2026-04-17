@@ -1,6 +1,6 @@
 # An eclectic collection of scripts for plotting model output
 
-## Examples of using `xr-plot-diff-map.py`
+## Examples of using `plot-diff-map.py`
 
 The examples below use here-doc feature of  Unix `bash` shell to keep
 all the information in one place, but they also can use the
@@ -9,7 +9,7 @@ configuration stored in a yaml file.
 Plot annual mean near-surface temperature difference between 10 years
 of two experiments:
 ```bash
-./xr-plot-diff-map.py -v - <<EOF
+./plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
@@ -21,7 +21,7 @@ EOF
 
 Same from the land data:
 ```bash
-./xr-plot-diff-map.py -v - <<EOF
+./plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
@@ -35,7 +35,7 @@ EOF
 
 Plot MAM difference between two experiments:
 ```bash
-./xr-plot-diff-map.py -v - <<EOF
+./plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
@@ -48,7 +48,7 @@ EOF
 
 Plot JJA-DJF difference for the same experiment:
 ```bash
-./xr-plot-diff-map.py -v - <<EOF
+./plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-50:50:5"
 colormap: RdBu_r
@@ -61,7 +61,7 @@ EOF
 
 Plot difference between two periods, no colorbar:
 ```bash
-./xr-plot-diff-map.py -v - <<EOF
+./plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
