@@ -6,7 +6,43 @@ To run unit tests:
 python -m unittest
 ```
 
-## Examples of using `plot-diff-map.py`
+## `plot-diff-map.py`
+### Structure of YAML configuration file
+
+Some of the options can be specified either in the common section, or for each
+experiments individually. If an option is set for the experiment, then it is
+used to process this experiment data, otherwise the option from the common
+section; if neither is set then the default is used. For example, "season" could
+be DJF for the first and JJA for the second, in which case the average JJA-DJF
+difference will be calculated and plotted. Another example: if "var" is "t_surf"
+in the first experiment and "t_surf" in the second, then the t_ref-t_surf
+difference will be calculated and plotted.
+
+Options (case sensitive):
+- title: string, optional; if absent formed automatically
+- figureWidth: float, optiona, default is 10
+- figureHeight: float, optiona, default is 5
+- projection: string, optional, default is 'PlateCarree'; one of the global
+  [cartopy projections](https://cartopy.readthedocs.io/stable/reference/projections.html)
+- colormap: string, the name of a [matplotlib colormap](https://matplotlib.org/stable/users/explain/colors/colormaps.html), optional, defaults to "rainbow"
+- levels: string (e.g."-2:2:0.2"), optional, but typically would be provided
+- var: string, the name of the variable that must be present in each of the input files
+- scale: float, default is 1.0
+- units: string
+- season: string, default is "ANN"
+- measureFile: requires if the variable has "area" section in cell_measures attribute; typically one of the "static" file sin the post-processin
+- years: range of years, optional, defaults to the all available in input files
+- experiments: required, array of two experiment/var/period,season description
+   - files: Unix file mask for the experiment data, required
+   - var: string, the name of the variable; variable of this name must be present in the input files
+   - season: string, can be different in each experiment, e.g. to calculate JJA-DJF
+   - scale: float, can be different in two experiments
+   - units: string (only units from the firs experiment are used)
+   - years: range of years, optional, can be different in two experiments,
+     defaults to the all available in the experiment's input files
+
+
+### Examples
 
 The examples below use here-doc feature of  Unix `bash` shell to keep
 all the information in one place, but they also can use the
@@ -17,7 +53,7 @@ of two experiments:
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
-levels: "-2:2:0.2"
+levels: "-2:2:0.2, del(0)"
 colormap: RdBu_r
 experiments:
   - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
@@ -25,15 +61,32 @@ experiments:
 EOF
 ```
 
+Difference in December temperatures:
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
 season: December
+#projection: Mollweide
+projection: Robinson
 experiments:
   - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
   - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+EOF
+```
+
+Example with scaling (conversion of precipitation units from kg/m2 to mm/day):
+```bash
+./plot-diff-map.py -v - <<EOF
+var: precip
+scale: 86400
+units: "mm/day"
+levels: "-2:2:0.2"
+colormap: RdBu
+experiments:
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.precip.nc"
+  - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.precip.nc"
 EOF
 ```
 
@@ -43,11 +96,23 @@ Same from the land data:
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
-statistics:
-  measureFile: /archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/land.static.nc
+measureFile: /archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/land.static.nc
 experiments:
   - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/ts/monthly/1yr/land.200*.t_ref.nc"
   - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/land/ts/monthly/1yr/land.200*.t_ref.nc"
+EOF
+```
+
+Difference between two variables
+```bash
+./plot-diff-map.py -v - <<EOF
+levels: "-2:2:0.2"
+colormap: RdBu_r
+experiments:
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_surf.nc"
+    var: t_surf
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+    var: t_ref
 EOF
 ```
 

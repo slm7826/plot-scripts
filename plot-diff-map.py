@@ -17,6 +17,11 @@ import cartopy.feature as cfeature
 import yaml
 import utils as ut
 
+# https://stackoverflow.com/questions/3262569/validating-a-yaml-document-in-python#22231372
+# from schema import Schema, And, Use, Optional, SchemaError
+# from cerberus import Validator
+# from jsonschema import validate
+
 xr.set_options(use_new_combine_kwarg_defaults=True)
 
 # TODO: Add configuration verification
@@ -24,6 +29,9 @@ xr.set_options(use_new_combine_kwarg_defaults=True)
 # TODO: Add time operations average (default), max, min, average annual max, average annual mean
 # TODO: Use months lengths in time averaging
 # TODO: Use contiguous seasons (e.g. DJF is not split across two years)
+# TODO: Add ability to specify the name of the area, or force using computed area
+# TODO: Add ability to perform vertical averaging (or integral)
+# TODO: Print out more statistics: min/max/quantiles, anything else?
 # TODO: Add ability to save data
 
 def report(message, verb=0):
@@ -89,8 +97,28 @@ def titleText(e0,e1):
         season0 = f',{e0["season"]}'
         season1 = f',{e1["season"]}'
         seasonA = ''
-    t = f'{dsTitle(e1["ds"],"exp1")}{years1}{season1} - {dsTitle(e0["ds"],"exp0")}{years0}{season0} {yearsA}{seasonA}'
+    t = f'{dsTitle(e1["ds"],"exp1")}{years1}{season1}-{dsTitle(e0["ds"],"exp0")}{years0}{season0} {yearsA}{seasonA}'
     return t
+
+def subTitleText(e0,e1):
+    '''
+    Given two dictionaries with experiment parameters, construct a
+    reasonable title text describing the difference map.
+    '''
+    s = ''; v0 = e0['var']; v1 = e1['var'];
+    if v0.name == v1.name:
+        # assuming long_name and units are the same in both experiments
+        s += f'{v0.name}'
+        if 'long_name' in v0.attrs:
+            s += f' ({v.long_name})'
+    else:
+        s += f'{v1.name}-{v0.name}'
+
+    if e0['units']:
+        s += f', {e0["units"]}'
+    elif 'units' in v0.attrs:
+        s += f', {v0.units}'
+    return s
 
 # ===-----------------------------------------------------------------===
 def getAreaName(var):
@@ -191,20 +219,20 @@ for experiment in config['experiments']:
         ys,ye = ut.parseRange(env['years'])
     else:
         ys,ye = (int(time.dt.year[0]),int(time.dt.year[-1]))
-    expDict['years'] = (ys,ye)
-    expDict['season'] = env['season']
     months = ut.monthsInSeason(env['season'])
     var0 = var.sel(time=slice(f'{ys}-01-01',f'{ye+1}-01-01'))
     var1 = var0.where(time.dt.month.isin(months),drop=True)
+
+    # store some data for display purposes
+    expDict['years'] = (ys,ye)
+    expDict['season'] = env['season']
+    expDict['units'] = env['units']
 
     # calculate the time average
     # TODO: use appropriate month lengths for averaging
     expDict['ave'] = var1.mean(dim=time.name, keep_attrs=True, skipna=True) * env['scale']
     # NOTE that var1 has all attributes, but they are lost after the
     # multiplication (feature of xarray?)
-
-#     print('######### AVE')
-#     print(expDict['ave'])
 
     # form the list of the experiments
     expList.append(expDict)
@@ -221,11 +249,10 @@ ds  = expList[0]['ds'] # use first of the experiments to get the measures, assum
 var = expList[0]['var']
 areaName = getAreaName(var)
 if areaName:
-    if env['statistics']['measureFile']:
-        measures = openFiles(env['statistics']['measureFile'])
-        area = measures[areaName]
-    else:
+    if not env['measureFile']:
         raise ValueError(f'No measure files specified, but they are required for calulation of statistics')
+    measures = openFiles(env['measureFile'])
+    area = measures[areaName]
 else:
     # compute area:
     # TODO: display note that the area is computed
@@ -286,7 +313,7 @@ if title.lower() != 'none':
 # add the name, long name, and units of the variable to the plot
 left = 0.0; right=1.0; top = 1.01
 v = expList[0]['var']
-ax.text(left, top, f'\n{v.name} ({v.long_name}), {v.units}',
+ax.text(left, top, subTitleText(expList[0],expList[1]),
         fontsize='small',
         horizontalalignment='left',
         verticalalignment='bottom',
