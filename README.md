@@ -7,46 +7,81 @@ python -m unittest
 ```
 
 ## `plot-diff-map.py`
+
+This script allows to plot a map of differences between two experiments. The
+input data and the parameters of the plot are specified in the input YAML file,
+except few settings such as verbosity level or destination of the plot.
+
+```bash
+usage: plot-diff-map.py [-h] [-v] [-s FILENAME] [--dpi DPI] FILENAME.yaml
+
+plot a map of differences between two experiments
+
+positional arguments:
+  FILENAME.yaml         plot configuration file, in yaml format
+
+options:
+  -h, --help            show this help message and exit
+  -v, --verbose         increase verbosity
+  -s FILENAME, --save FILENAME
+                        save plot to file (pdf, png, ...) instead of plotting it on screen.
+  --dpi DPI             resolution for saved raster figures
+```
+
+For example:
+```bash
+plot-diff-map.py --save=diff.png diff.yaml
+```
+where the contents of `diff.yaml` is:
+```yaml
+var: t_ref
+levels: "-2:2:0.2, del(0)"
+colormap: RdBu_r
+experiments:
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+  - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+```
 ### Structure of YAML configuration file
 
 Some of the options can be specified either in the common section, or for each
-experiments individually. If an option is set for the experiment, then it is
-used to process this experiment data, otherwise the option from the common
-section; if neither is set then the default is used. For example, "season" could
-be DJF for the first and JJA for the second, in which case the average JJA-DJF
-difference will be calculated and plotted. Another example: if "var" is "t_surf"
-in the first experiment and "t_surf" in the second, then the t_ref-t_surf
-difference will be calculated and plotted.
+experiments individually. If an option is set for the specific experiment (e.g.
+`scale` of the variable), then it is used to process this experiment data,
+otherwise the option from the common section is used; if neither is set then the default
+is used. For example, `season` could be `DJF` for the first and `JJA` for the
+second experiment, in which case the average JJA-DJF difference will be calculated and
+plotted. Another example: if "var" is "t_surf" in the first experiment and
+"t_ref" in the second, then the t_ref-t_surf difference will be calculated and
+plotted.
 
-Options (case sensitive):
+Configuration options (case sensitive):
 - title: string, optional; if absent formed automatically
 - figureWidth: float, optiona, default is 10
 - figureHeight: float, optiona, default is 5
 - projection: string, optional, default is 'PlateCarree'; one of the global
   [cartopy projections](https://cartopy.readthedocs.io/stable/reference/projections.html)
 - colormap: string, the name of a [matplotlib colormap](https://matplotlib.org/stable/users/explain/colors/colormaps.html), optional, defaults to "rainbow"
-- levels: string (e.g."-2:2:0.2"), optional, but typically would be provided
-- var: string, the name of the variable that must be present in each of the input files
+- levels: string (e.g."-2:2:0.2, del(0)"), optional, but typically should be provided
+- var: string, the name of the variable to plot; naturally the variable of that name must be present in each of the input files
 - scale: float, default is 1.0
 - units: string; if not specified units form the variable attributes are used
-- season: string, default is "ANN". Can be a full name of the months, or seasons abbreviation (e.g. DJF, JJA, JSON, etc.)
+- season: string, default is "ANNUAL". Can be a full name of a month, or abbreviated season name, e.g. DJF, JJA, JSON, etc.
 - measureFile: required if the variable has "area" section in cell_measures attribute; typically one of the "static" files in the post-processin
 - years: range of years (e.g. "1979:2001", inclusive), optional, defaults to the all available in input files
-- experiments: required, array of two experiment/var/period,season description
+- experiments: required, array of two experiment/var/period/season descriptions
    - files: Unix file mask for the experiment data, required
    - var: string, the name of the variable; variable of this name must be present in the input files
    - season: string, can be different in each experiment, e.g. to calculate JJA-DJF
    - scale: float, can be different in two experiments
-   - units: string (only units from the first experiment -- or general -- are used)
+   - units: string (only units from the first experiment -- or general section -- are used)
    - years: range of years, optional, can be different in two experiments,
-     defaults to the all available in the experiment's input files
+     defaults to the all years available in the experiment's input files
 
 
-### Examples
+### More examples of usage
 
-The examples below use here-doc feature of  Unix `bash` shell to keep
-all the information in one place, but they also can use the
-configuration stored in a yaml file.
+The examples below use here-doc feature of  Unix `bash` shell to keep all the
+information in one place, but they also can use the configuration stored in a
+yaml file, as shown above.
 
 Plot annual mean near-surface temperature difference between 10 years
 of two experiments:
@@ -61,14 +96,13 @@ experiments:
 EOF
 ```
 
-Difference in December temperatures:
+Difference of July temperatures:
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
 season: July
-#projection: Mollweide
 projection: Robinson
 experiments:
   - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
@@ -76,7 +110,21 @@ experiments:
 EOF
 ```
 
-Example with scaling (conversion of precipitation units from kg/m2 to mm/day):
+Same from the land data (which have area variable specified in the attribute and therefore
+use it for calculating spatial statistics):
+```bash
+./plot-diff-map.py -v - <<EOF
+var: t_ref
+levels: "-2:2:0.2"
+colormap: RdBu_r
+measureFile: /archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/land.static.nc
+experiments:
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/ts/monthly/1yr/land.200*.t_ref.nc"
+  - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/land/ts/monthly/1yr/land.200*.t_ref.nc"
+EOF
+```
+
+Example with scaling (conversion of precipitation units from kg/(m2 s) to mm/day):
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: precip
@@ -90,20 +138,7 @@ experiments:
 EOF
 ```
 
-Same from the land data:
-```bash
-./plot-diff-map.py -v - <<EOF
-var: t_ref
-levels: "-2:2:0.2"
-colormap: RdBu_r
-measureFile: /archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/land.static.nc
-experiments:
-  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/ts/monthly/1yr/land.200*.t_ref.nc"
-  - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/land/ts/monthly/1yr/land.200*.t_ref.nc"
-EOF
-```
-
-Difference between two variables
+Difference between two variables:
 ```bash
 ./plot-diff-map.py -v - <<EOF
 levels: "-2:2:0.2"
@@ -116,13 +151,13 @@ experiments:
 EOF
 ```
 
-Plot MAM difference between two experiments:
+Plot JJAS seasonal difference between two experiments:
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
-season: MAM
+season: JJAS
 experiments:
   - files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
   - files:    "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
@@ -142,7 +177,7 @@ experiments:
 EOF
 ```
 
-Plot difference between two periods, no colorbar:
+Plot difference between two periods, do not plot colorbar:
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
