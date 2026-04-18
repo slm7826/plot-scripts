@@ -134,3 +134,72 @@ def monthsInSeason(seasonName):
             f"Unsupported season selector '{seasonName}'. Use 'annual' or contiguous month initials like 'SO', 'JAS', 'DJF'."
         )
     return [(start + i) % 12 + 1 for i in range(len(key))]
+
+# ===-----------------------------------------------------------------------===
+def findSubList(subList,superList,reverse=False):
+    '''
+    Given the (shorter) subList and (longer) superList, returns the index of the
+    first entry of first into the second; returns -1 if the first is not in the
+    second.
+
+    If reverse is True, the the searches fom the end of superlist backwards.
+    '''
+    n = len(subList)
+
+    if len(subList) > len(superList):
+        return -1
+
+    if reverse:
+        for i in range(len(superList)-n,-1,-1):
+            if subList == superList[i:i+n]:
+                return i
+    else:
+        for i in range(len(superList)-n+1):
+            if subList == superList[i:i+n]:
+                return i
+    return -1
+
+
+# ===-----------------------------------------------------------------------===
+def timeName(ds):
+# TODO: actually search for time coordinate
+    return 'time'
+
+# ===-----------------------------------------------------------------------===
+def seasonalMeanFromMonthly(ds, seasonName):
+    '''
+    Given an xarray variable with monthly time resolution and the name of a
+    season, time average for this season.
+    '''
+    # list of months in season
+    season = monthsInSeason(seasonName)
+
+    # find the first and the last months in the time series that belong to the
+    # season:
+#     timeName = nameOfTime(ds)
+    timeName = 'time'
+    if not timeName:
+        raise KeyError('Time coordinate is not found in input data set')
+    months = list(ds[timeName].dt.month.values)
+    m0 = findSubList(season,months)
+    m1 = findSubList(season,months,reverse=True)+len(season)
+    if m0 == -1 or m1 == -1:
+        raise ValueError(f"Season's {seasonName} months {season} are not forund in time line")
+
+    # skip incomplete seasons at the beginning and the end of the time series
+    ds1  = ds[m0:m1]
+
+    # drop months that do not belong to the season
+    ds2  = ds1.where(ds1[timeName].dt.month.isin(season),drop=True)
+
+#     print("ds :",ds[timeName])
+#     print(f"m0={m0}, m1={m1}")
+#     print("ds1:",ds1[timeName])
+#     print("ds2:",ds2[timeName])
+
+    # calculate the average
+    ave = (ds2 * ds2[timeName].dt.days_in_month).sum(dim=timeName, keep_attrs=True)/ \
+            ds2[timeName].dt.days_in_month.sum(dim=timeName)
+
+    return ave
+

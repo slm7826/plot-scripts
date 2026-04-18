@@ -28,16 +28,16 @@ Options (case sensitive):
 - levels: string (e.g."-2:2:0.2"), optional, but typically would be provided
 - var: string, the name of the variable that must be present in each of the input files
 - scale: float, default is 1.0
-- units: string
-- season: string, default is "ANN"
-- measureFile: requires if the variable has "area" section in cell_measures attribute; typically one of the "static" file sin the post-processin
-- years: range of years, optional, defaults to the all available in input files
+- units: string; if not specified units form the variable attributes are used
+- season: string, default is "ANN". Can be a full name of the months, or seasons abbreviation (e.g. DJF, JJA, JSON, etc.)
+- measureFile: required if the variable has "area" section in cell_measures attribute; typically one of the "static" files in the post-processin
+- years: range of years (e.g. "1979:2001", inclusive), optional, defaults to the all available in input files
 - experiments: required, array of two experiment/var/period,season description
    - files: Unix file mask for the experiment data, required
    - var: string, the name of the variable; variable of this name must be present in the input files
    - season: string, can be different in each experiment, e.g. to calculate JJA-DJF
    - scale: float, can be different in two experiments
-   - units: string (only units from the firs experiment are used)
+   - units: string (only units from the first experiment -- or general -- are used)
    - years: range of years, optional, can be different in two experiments,
      defaults to the all available in the experiment's input files
 
@@ -67,7 +67,7 @@ Difference in December temperatures:
 var: t_ref
 levels: "-2:2:0.2"
 colormap: RdBu_r
-season: December
+season: July
 #projection: Mollweide
 projection: Robinson
 experiments:
@@ -213,4 +213,42 @@ plots:
     measures: "$dir2/land_cmip/land_cmip.static.nc"
 EOF1
 done
+```
+
+
+```bash
+dir1="/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-esm/gfdl.ncrc6-intel25-prod-openmp/pp"
+dir2="/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-newsun/gfdl.ncrc6-intel25-prod-openmp/pp"
+
+var=btot
+./xr-plot-annual-ts.py - << EOF
+defaults:
+  scale: 1e-12
+  units: PgC
+  var: $var
+plots:
+  - files:    "$dir1/land/ts/monthly/5yr/*.$var.nc"
+    measures: "$dir2/land/land.static.nc"
+  - files:    "$dir2/land/ts/monthly/5yr/*.$var.nc"
+    measures: "$dir2/land/land.static.nc"
+EOF
+done
+```
+
+Old script that does not work any more:
+```
+ppDir=/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-esm/gfdl.ncrc6-intel25-prod-openmp/pp
+var=cLand
+~/bin/plot/plot-annual-ts.py --verb --var=$var --scale=1e-12 --units=PgC \
+   --measures "$ppDir/land/land.static.nc" \
+   --exp "$ppDir/land/ts/monthly/5yr/*.Ctot.nc"
+```
+
+Error message:
+```
+  File "/home/Sergey.Malyshev/bin/plot/plot-annual-ts.py", line 172, in <module>
+    src=nc.MFDataset(files,master_file=files[-1])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/netCDF4/_netCDF4.pyx", line 7044, in netCDF4._netCDF4.MFDataset.__init__
+ValueError: MFNetCDF4 only works with NETCDF3_* and NETCDF4_CLASSIC formatted files, not NETCDF4
 ```

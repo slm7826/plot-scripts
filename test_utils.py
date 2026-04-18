@@ -111,5 +111,61 @@ class TestGetBounds(unittest.TestCase):
         with self.assertRaises(KeyError):
             bounds = ut.getBounds(self.ds1,'lat').values
 
+class testSubList(unittest.TestCase):
+
+    def test_searchForward(self):
+        ''' Testing searching forward '''
+        l = [1,2,3,4,5,6,7,8,9,10,11,12]
+        self.assertEqual(ut.findSubList([1,2,3],l),0)
+        self.assertEqual(ut.findSubList([6,7,8],l),5)
+        self.assertEqual(ut.findSubList([12,1,2],l),-1)
+
+        self.assertEqual(ut.findSubList([1,2,3],[1,2,3]),0)
+        self.assertEqual(ut.findSubList([1,2,3,4],[1,2,3]),-1)
+        self.assertEqual(ut.findSubList([1],[1]),0)
+
+        # looking for empty list in forward order always finds it at position 0
+        self.assertEqual(ut.findSubList([],[]),0)
+        self.assertEqual(ut.findSubList([],[1,2,2]),0)
+
+        l = [1,2,3,4,5,6,7,8,9,10,11,12] * 3
+        self.assertEqual(ut.findSubList([1,2,3],l),0)
+        self.assertEqual(ut.findSubList([6,7,8],l),5)
+        self.assertEqual(ut.findSubList([12,1,2],l),11)
+
+    def test_searchBackward(self):
+        ''' Testing searching backward '''
+        l = [1,2,3,4,5,6,7,8,9,10,11,12]
+        self.assertEqual(ut.findSubList([1,2,3],l,reverse=True),0)
+        self.assertEqual(ut.findSubList([6,7,8],l,reverse=True),5)
+        self.assertEqual(ut.findSubList([12,1,2],l,reverse=True),-1)
+        self.assertEqual(ut.findSubList([12],l,reverse=True),11)
+        self.assertEqual(ut.findSubList([1],l,reverse=True),0)
+
+        # looking for empty list always finds it at position N
+        self.assertEqual(ut.findSubList([],l,reverse=True),12)
+        self.assertEqual(ut.findSubList([],[],reverse=True),0)
+
+        l = [1,2,3,4,5,6,7,8,9,10,11,12]*3
+        self.assertEqual(ut.findSubList([1,2,3],l,reverse=True),24)
+        self.assertEqual(ut.findSubList([6,7,8],l,reverse=True),29)
+        self.assertEqual(ut.findSubList([12,1,2],l,reverse=True),23)
+        self.assertEqual(ut.findSubList([7],l,reverse=True),30)
+
+    def test_Range(self):
+        '''Testing range of months'''
+        months = [1,2,3,4,5,6,7,8,9,10,11,12] * 3
+        def test(season):
+            i0 = ut.findSubList(season, months)
+            i1 = ut.findSubList(season, months, reverse=True)
+            m = months[i0:i1+len(season)]
+            self.assertEqual(m[0], season[0])
+            self.assertEqual(m[-1], season[-1])
+#             self.assertEqual(len(m), 24+len(season))
+
+        test([2,3,4,5])
+        test([12,1,2])
+
+
 if __name__ == '__main__':
     unittest.main()

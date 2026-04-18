@@ -25,10 +25,8 @@ import utils as ut
 xr.set_options(use_new_combine_kwarg_defaults=True)
 
 # TODO: Add configuration verification
-# TODO: Add var titles and units to configuration
+# TODO: Add var titles to configuration, to show user-defined names of the variables
 # TODO: Add time operations average (default), max, min, average annual max, average annual mean
-# TODO: Use months lengths in time averaging
-# TODO: Use contiguous seasons (e.g. DJF is not split across two years)
 # TODO: Add ability to specify the name of the area, or force using computed area
 # TODO: Add ability to perform vertical averaging (or integral)
 # TODO: Print out more statistics: min/max/quantiles, anything else?
@@ -219,20 +217,15 @@ for experiment in config['experiments']:
         ys,ye = ut.parseRange(env['years'])
     else:
         ys,ye = (int(time.dt.year[0]),int(time.dt.year[-1]))
-    months = ut.monthsInSeason(env['season'])
     var0 = var.sel(time=slice(f'{ys}-01-01',f'{ye+1}-01-01'))
-    var1 = var0.where(time.dt.month.isin(months),drop=True)
+    # Calculate the time average. NOTE that var1 has all attributes, but they
+    # are lost after the multiplication (feature of xarray?)
+    expDict['ave'] = ut.seasonalMeanFromMonthly(var0,env['season'])*env['scale']
 
     # store some data for display purposes
-    expDict['years'] = (ys,ye)
+    expDict['years']  = (ys,ye)
     expDict['season'] = env['season']
-    expDict['units'] = env['units']
-
-    # calculate the time average
-    # TODO: use appropriate month lengths for averaging
-    expDict['ave'] = var1.mean(dim=time.name, keep_attrs=True, skipna=True) * env['scale']
-    # NOTE that var1 has all attributes, but they are lost after the
-    # multiplication (feature of xarray?)
+    expDict['units']  = env['units']
 
     # form the list of the experiments
     expList.append(expDict)
@@ -255,7 +248,7 @@ if areaName:
     area = measures[areaName]
 else:
     # compute area:
-    # TODO: display note that the area is computed
+# TODO: display note that the area is computed
     latb = ut.getBounds(ds,'lat')
     lonb = ut.getBounds(ds,'lon')
 
