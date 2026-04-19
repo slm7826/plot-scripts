@@ -42,9 +42,10 @@ def plot(ax,env,lineList):
         that includes information sufficient to construct a unique line label.
     '''
 
-    print('Parameters of plot')
-    for item in env:
-        print(f'{item:>10} : {env[item]}')
+    if (args.verb>1):
+        print('Parameters of plot')
+        for item in env:
+            print(f'{item:>10} : {env[item]}')
 
 # TODO: avoid repeatedly reading data and measure files, if they are the same for all plots
 #       check if the data set is specified in the plot spec (enc.)
@@ -57,7 +58,9 @@ def plot(ax,env,lineList):
 
     # get area associated with variable
     area = areaName(var)
+    # print(area)
     measures = openFiles(env['measures'])
+    # print(measures)
     try:
         area = measures[area]
     except KeyError:
@@ -73,7 +76,7 @@ def plot(ax,env,lineList):
     if ys > ye:
         ys,ye = ye,ys
 
-    # add parameters of the line to the dictionary, for constructing of default label
+    # add parameters of the line to the dictionary, for constructing default label
     lineDict = {}
     for item in ['var','smooth','label', 'op' ]:
         if item in env:
@@ -88,6 +91,7 @@ def plot(ax,env,lineList):
 
 
     ann  = ann.sel(lat=slice(ys,ye))
+    # print(area)
     area = area.sel(lat=slice(ys,ye))
 
 #     report(f'Applying area weights "{area.name}" to "{var.name}"...')
@@ -218,63 +222,9 @@ def regionStr(region):
 
 # ===-----------------------------------------------------------------===
 # parse command-line arguments
-"""
-YAML plot configuration file may have two sections:
-
-defaults:
-    apply to all plots
-
-plots:
-    an array of parameters for each of the plots
-
-Many parameters may exist in either defaults or individual plots parameters,
-while some only make sense either in defaults or in per-plot settings
-
-Description of parameters:
-files: pattern (in terms of the Unix file name glob) describing the files
-    where the data are
-
-measures: pattern of the file(s) containing the area associated with the
-    variable; typically a "static" file
-
-var: name of the variable to plot
-
-scale: scaling factor applied to the variable before plotting
-
-units: Units of the variable (after scale is applied)
-
-region: latitudinal region to plot, array. Example: [30S, 30N]
-
-label: label of the line, if different from the default
-
-lineProperties: dictionary of the matplotlib properties of the line(s)
-
-op: aggregation operation in horizontal dimensions, one of ...
-
-smooth: number of years to smooth data over
-
-title: title of the entire plot
-
-figureWidth, figureHeight: dimensions of the figure
-
-Example:
-----
-defaults:
-  scale: 0.000031536
-  units: PgC/year
-  var: fFire
-  smooth: 20
-plots:
-  - files:    "/archive/slm/lm4p2/2022/lm4p2sc-GSWP3-potveg/gfdl.ncrc3-intel18-prod/pp/land_cmip/ts/monthly/5yr/land_cmip.*.fFire.nc"
-    measures: "/archive/slm/lm4p2/2022/lm4p2sc-GSWP3-potveg/gfdl.ncrc3-intel18-prod/pp/land/land.static.nc"
-  - files:    "/archive/slm/lm4p2/2025/lm4p2-c96am5-potveg/gfdl.ncrc6-intel23-prod/pp/land_cmip/ts/monthly/5yr/land_cmip.*.fFire.nc"
-    measures: "/archive/slm/lm4p2/2025/lm4p2-c96am5-potveg/gfdl.ncrc6-intel23-prod/pp_1/land/land.static.nc"
-----
-"""
-
 parser = argparse.ArgumentParser(description='plot something')
 parser.add_argument('-v', '--verbose', dest='verb',
-    help='increase verbosity', action='count', default=1)
+    help='increase verbosity', action='count', default=0)
 parser.add_argument(
     '-s','--save', metavar='FILENAME',
     help='save plot to file (pdf, png, ...) instead of plotting it on screen.')
@@ -285,27 +235,29 @@ args=parser.parse_args()
 
 # ===-----------------------------------------------------------------------===
 # print package versions
-if args.verb > 0:
+if args.verb > 1:
     print('using pakages:')
     for package in np,xr,yaml,mpl:
          print('    {:>12} : {}'.format(package.__name__,package.__version__))
 
 
 # ===-----------------------------------------------------------------===
-# read configuration file
-config = yaml.safe_load(args.file)
-
-# ===-----------------------------------------------------------------===
 # create "environment" for plots with default and hard-coded parameters
-hardcoded = {
+defaults = {
     'op':'integral',
     'region':[-90,90],
     'scale':1.0,
     'figureWidth':10.0, 'figureHeight':5.0
     }
-env0 = ChainMap(config['defaults'],hardcoded)
-# for item in env0:
-#     print(f'{item:>10} : {env0[item]}')
+env0 = ChainMap(defaults)
+
+# ===-----------------------------------------------------------------===
+# read configuration file
+config = yaml.safe_load(args.file)
+
+# add configuration parameters to the environment (except 'plots' array, which
+# will be handled later)
+env0 = env0.new_child({x: config[x] for x in config if x not in ['plots']})
 
 fig,ax = plt.subplots(1,1,facecolor='w',
     figsize=(float(env0['figureWidth']),float(env0['figureHeight'])))
@@ -316,7 +268,7 @@ for pars in config['plots'] :
     plot(ax,env,lineList)
 
 # Construct default labels
-print(lineList)
+# print(lineList)
 # find the information that needs to go in line label
 titleKeys = []; labelKeys=[]
 for key in lineList[0].keys():
@@ -326,10 +278,10 @@ for key in lineList[0].keys():
         labelKeys.append(key)
     else:
         titleKeys.append(key)
-    print(f' {key:>10} : {len(s):2d} : {s} ')
+#     print(f' {key:>10} : {len(s):2d} : {s} ')
 
-print(f'titleKeys : {titleKeys}')
-print(f'labelKeys : {labelKeys}')
+# print(f'titleKeys : {titleKeys}')
+# print(f'labelKeys : {labelKeys}')
 
 def titleString(keys,env0,env):
     if 'title' in env0:
@@ -362,12 +314,12 @@ def labelString(keys,env):
         if 'exp'    in keys: s.append(env['exp'])
         if 'region' in keys: s.append(env['region'])
 #         if 'op'     in keys: s.append(env['op'])
-        if 'var'    in keys: s.append(f'of {env["var"]}')
+        if 'var'    in keys: s.append(f'{env["var"]}')
         return ' '.join(s)
 
 # ===-----------------------------------------------------------------===
 for line in lineList:
-    print(line)
+#     print(line)
     line['line'].set_label(labelString(labelKeys,line))
 
 ax.grid(True)

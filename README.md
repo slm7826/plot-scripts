@@ -6,11 +6,13 @@ To run unit tests:
 python -m unittest
 ```
 
-## `plot-diff-map.py`
+## `plot-diff-map.py` --- plotting seasonal or annual differences.
 
-This script allows to plot a map of differences between two experiments. The
-input data and the parameters of the plot are specified in the input YAML file,
-except few settings such as verbosity level or destination of the plot.
+This script allows to plot a map of differences: between two experiments, or
+between two periods of the same run, or between different seasons, or between
+different varuables. The input data and the parameters of the plot are specified
+in the input YAML file, except few settings such as verbosity level or
+destination of the plot.
 
 ```bash
 usage: plot-diff-map.py [-h] [-v] [-s FILENAME] [--dpi DPI] FILENAME.yaml
@@ -44,7 +46,7 @@ experiments:
 ### Structure of YAML configuration file
 
 Some of the options can be specified either in the common section, or for each
-experiments individually. If an option is set for the specific experiment (e.g.
+of the experiments individually. If an option is set for the specific experiment (e.g.
 `scale` of the variable), then it is used to process this experiment data,
 otherwise the option from the common section is used; if neither is set then the default
 is used. For example, `season` could be `DJF` for the first and `JJA` for the
@@ -77,14 +79,13 @@ Configuration options (case sensitive):
      defaults to the all years available in the experiment's input files
 
 
-### More examples of usage
+### Examples of `plot-diff-map.py` usage
 
 The examples below use here-doc feature of  Unix `bash` shell to keep all the
 information in one place, but they also can use the configuration stored in a
 yaml file, as shown above.
 
-Plot annual mean near-surface temperature difference between 10 years
-of two experiments:
+#### Annual mean near-surface temperature difference between 10 years of two experiments:
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
@@ -96,7 +97,7 @@ experiments:
 EOF
 ```
 
-Difference of July temperatures:
+#### Difference of July temperatures:
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
@@ -110,8 +111,10 @@ experiments:
 EOF
 ```
 
-Same from the land data (which have area variable specified in the attribute and therefore
-use it for calculating spatial statistics):
+#### Same from the land output
+
+Land data have area variable specified in the `cell_measure` attribute of the
+variables, and therefore the script uses it for calculating spatial statistics):
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
@@ -124,7 +127,7 @@ experiments:
 EOF
 ```
 
-Example with scaling (conversion of precipitation units from kg/(m2 s) to mm/day):
+#### Scaling: conversion of precipitation units from kg/(m2 s) to mm/day
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: precip
@@ -138,7 +141,7 @@ experiments:
 EOF
 ```
 
-Difference between two variables:
+#### Difference between two variables
 ```bash
 ./plot-diff-map.py -v - <<EOF
 levels: "-2:2:0.2"
@@ -151,7 +154,7 @@ experiments:
 EOF
 ```
 
-Plot JJAS seasonal difference between two experiments:
+#### JJAS seasonal difference between two experiments
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
@@ -164,7 +167,7 @@ experiments:
 EOF
 ```
 
-Plot JJA-DJF difference for the same experiment:
+#### JJA-DJF difference for the same experiment
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
@@ -177,7 +180,9 @@ experiments:
 EOF
 ```
 
-Plot difference between two periods, do not plot colorbar:
+#### Difference between two periods
+
+This example also shows how to disable colorbar
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
@@ -191,9 +196,62 @@ experiments:
 EOF
 ```
 
+## `xr-plot-annual-ts.py` --- plot time series of annual-mean values
+
+This script allows to plot time series of annual mean values (average or total
+global) for a number of experiments, or for several variables, or for several
+regions, on the same plot.
+
+```bash
+usage: xr-plot-annual-ts.py [-h] [-v] [-s FILENAME] FILENAME.yaml
+
+plot something
+
+positional arguments:
+  FILENAME.yaml         plot configuration file, in yaml format
+
+options:
+  -h, --help            show this help message and exit
+  -v, --verbose         increase verbosity
+  -s FILENAME, --save FILENAME
+                        save plot to file (pdf, png, ...) instead of plotting it on screen.
+```
+
+The script expects to find the configuration of plots in the input YAML file, but it can
+also come from stdin, as shown in examples below using here-doc feature of
+`bash`; it should work in other shells too, perhaps with appropriate
+modifications.
+
+### Structure of YAML configuration file
+
+Some of the options can be specified either in the common section, or for each
+plot individually. If an option is set for the specific plot (e.g.
+name of the variable), then it is used to process this experiment data,
+otherwise the option from the common section is used; if neither is set then the
+default is used.
+
+Many parameters may exist in either defaults or individual plots parameters,
+while some only make sense either in defaults or in per-plot settings
+
+Description of parameters:
+- files: pattern (in terms of the Unix file name glob) describing the files where the data are
+- measures: pattern of the file(s) containing the area associated with the variable; typically a "static" file
+- var: name of the variable to plot
+- scale: scaling factor applied to the variable before plotting
+- units: Units of the variable (after scale is applied)
+- region: latitudinal region to plot, array. Example: [30S, 30N]
+- label: label of the line, if different from the default
+- lineProperties: dictionary of the [matplotlib properties](https://matplotlib.org/stable/api/_as_gen/matplotlib.lines.Line2D.html#matplotlib.lines.Line2D) of the line(s)
+- op: aggregation operation in horizontal dimensions, one of ...
+- smooth: number of years to smooth data over
+- title: title of the entire plot
+- figureWidth, figureHeight: dimensions of the figure
+
 ### Examples of plotting time series
 
-Example of plotting time series of annual total vegetation carbon amount
+#### Plot two time series
+
+Plot time series of annual total vegetation carbon amount
 from two experiments, using here-doc feature of `bash` shell:
 ```bash
 dir1="/archive/slm/lm4p2/2022/lm4p2sc-GSWP3-potveg/gfdl.ncrc3-intel18-prod/pp"
@@ -201,27 +259,29 @@ dir2="/archive/slm/lm4p2/2025/lm4p2-c96am5-potveg/gfdl.ncrc6-intel23-prod/pp"
 var=cVeg
 
 ./xr-plot-annual-ts.py -v - << EOF
-defaults:
-  scale: 1e-12
-  units: PgC
-  var: $var
+scale: 1e-12
+units: PgC
+var: $var
 plots:
-  - files:    "$dir1/land_cmip/ts/monthly/5yr/land_cmip.*.$var.nc"
+  - files:    "$dir1/land_cmip/ts/monthly/5yr/land_cmip.00*.$var.nc"
     measures: "$dir1/land_cmip/land_cmip.static.nc"
-  - files:    "$dir2/land_cmip/ts/monthly/5yr/land_cmip.*.$var.nc"
+  - files:    "$dir2/land_cmip/ts/monthly/5yr/land_cmip.00*.$var.nc"
     measures: "$dir2/land_cmip/land_cmip.static.nc"
+    lineProperties:
+        ls: "--"
+        color: black
+        linewidth: 2.5
 EOF
 ```
 
-Plotting two different variables from the same experiment:
+#### Plotting two different variables from the same experiment:
 ```bash
 dir1="/archive/slm/lm4p2/2022/lm4p2sc-GSWP3-potveg/gfdl.ncrc3-intel18-prod/pp"
 
 ./xr-plot-annual-ts.py -v - << EOF
-defaults:
-  scale: 1e-12
-  units: PgC
-  measures: "$dir1/land_cmip/land_cmip.static.nc"
+scale: 1e-12
+units: PgC
+measures: "$dir1/land_cmip/land_cmip.static.nc"
 plots:
   - files:    "$dir1/land_cmip/ts/monthly/5yr/land_cmip.*.cSoil.nc"
     var: cSoil
@@ -230,26 +290,30 @@ plots:
 EOF
 ```
 
-Example of plotting several time series, saving plots to respective files:
+### Plot several time series in a loop
+
+Example of plotting several time series in a loop, saving plots to respective
+files. This is written in `bash`, so users of `c-shell` must modify it
+accordingly.
 ```bash
 dir1="/archive/slm/lm4p2/2022/lm4p2sc-GSWP3-potveg/gfdl.ncrc3-intel18-prod/pp"
 dir2="/archive/slm/lm4p2/2025/lm4p2-c96am5-potveg/gfdl.ncrc6-intel23-prod/pp"
 
 for var in cVeg cSoil cLitter cLand; do
-    ./xr-plot-annual-ts.py --save ts-$var.pdf<< EOF1
-defaults:
-  scale: 1e-12
-  units: PgC
-  var: $var
+    ./xr-plot-annual-ts.py --save ts-$var.pdf - << EOF
+scale: 1e-12
+units: PgC
+var: $var
 plots:
   - files:    "$dir1/land_cmip/ts/monthly/5yr/land_cmip.*.$var.nc"
     measures: "$dir1/land_cmip/land_cmip.static.nc"
   - files:    "$dir2/land_cmip/ts/monthly/5yr/land_cmip.*.$var.nc"
     measures: "$dir2/land_cmip/land_cmip.static.nc"
-EOF1
+EOF
 done
 ```
 
+These example do not work because static file is broken
 
 ```bash
 dir1="/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-esm/gfdl.ncrc6-intel25-prod-openmp/pp"
@@ -267,7 +331,18 @@ plots:
   - files:    "$dir2/land/ts/monthly/5yr/*.$var.nc"
     measures: "$dir2/land/land.static.nc"
 EOF
-done
+```
+
+```bash
+./xr-plot-annual-ts.py - << EOF
+defaults:
+  scale: 1e-12
+  units: PgC
+  var: btot
+plots:
+  - files:    "/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-newsun/gfdl.ncrc6-intel25-prod-openmp/pp/land/ts/monthly/5yr/*.btot.nc"
+    measures: "/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-newsun/gfdl.ncrc6-intel25-prod-openmp/pp/land/land.static.nc"
+EOF
 ```
 
 Old script that does not work any more:
