@@ -196,14 +196,14 @@ experiments:
 EOF
 ```
 
-## `xr-plot-annual-ts.py` --- plot time series of annual-mean values
+## `plot-annual-ts.py` --- plot time series of annual-mean values
 
 This script allows to plot time series of annual mean values (average or total
 global) for a number of experiments, or for several variables, or for several
 regions, on the same plot.
 
 ```bash
-usage: xr-plot-annual-ts.py [-h] [-v] [-s FILENAME] FILENAME.yaml
+usage: plot-annual-ts.py [-h] [-v] [-s FILENAME] FILENAME.yaml
 
 plot something
 
@@ -249,6 +249,10 @@ Description of parameters:
 
 ### Examples of plotting time series
 
+In these examples, paths to input directories are assigned to shell variables
+that are consequently used in the plot configurations; this is solely for
+convenience and shorten the notation.
+
 #### Plot two time series
 
 Plot time series of annual total vegetation carbon amount
@@ -258,7 +262,7 @@ dir1="/archive/slm/lm4p2/2022/lm4p2sc-GSWP3-potveg/gfdl.ncrc3-intel18-prod/pp"
 dir2="/archive/slm/lm4p2/2025/lm4p2-c96am5-potveg/gfdl.ncrc6-intel23-prod/pp"
 var=cVeg
 
-./xr-plot-annual-ts.py -v - << EOF
+./plot-annual-ts.py -v - << EOF
 scale: 1e-12
 units: PgC
 var: $var
@@ -274,11 +278,11 @@ plots:
 EOF
 ```
 
-#### Plotting two different variables from the same experiment:
+#### Plott two different variables from the same experiment
 ```bash
 dir1="/archive/slm/lm4p2/2022/lm4p2sc-GSWP3-potveg/gfdl.ncrc3-intel18-prod/pp"
 
-./xr-plot-annual-ts.py -v - << EOF
+./plot-annual-ts.py -v - << EOF
 scale: 1e-12
 units: PgC
 measures: "$dir1/land_cmip/land_cmip.static.nc"
@@ -290,7 +294,7 @@ plots:
 EOF
 ```
 
-### Plot several time series in a loop
+#### Plot several time series in a loop
 
 Example of plotting several time series in a loop, saving plots to respective
 files. This is written in `bash`, so users of `c-shell` must modify it
@@ -300,7 +304,7 @@ dir1="/archive/slm/lm4p2/2022/lm4p2sc-GSWP3-potveg/gfdl.ncrc3-intel18-prod/pp"
 dir2="/archive/slm/lm4p2/2025/lm4p2-c96am5-potveg/gfdl.ncrc6-intel23-prod/pp"
 
 for var in cVeg cSoil cLitter cLand; do
-    ./xr-plot-annual-ts.py --save ts-$var.pdf - << EOF
+    ./plot-annual-ts.py --save ts-$var.pdf - << EOF
 scale: 1e-12
 units: PgC
 var: $var
@@ -313,18 +317,19 @@ EOF
 done
 ```
 
-These example do not work because static file is broken
+----
+
+The example below do not work because land static file is broken
 
 ```bash
 dir1="/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-esm/gfdl.ncrc6-intel25-prod-openmp/pp"
 dir2="/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-newsun/gfdl.ncrc6-intel25-prod-openmp/pp"
 
 var=btot
-./xr-plot-annual-ts.py - << EOF
-defaults:
-  scale: 1e-12
-  units: PgC
-  var: $var
+./plot-annual-ts.py - << EOF
+scale: 1e-12
+units: PgC
+var: $var
 plots:
   - files:    "$dir1/land/ts/monthly/5yr/*.$var.nc"
     measures: "$dir2/land/land.static.nc"
@@ -334,11 +339,10 @@ EOF
 ```
 
 ```bash
-./xr-plot-annual-ts.py - << EOF
-defaults:
-  scale: 1e-12
-  units: PgC
-  var: btot
+./plot-annual-ts.py - << EOF
+scale: 1e-12
+units: PgC
+var: btot
 plots:
   - files:    "/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-newsun/gfdl.ncrc6-intel25-prod-openmp/pp/land/ts/monthly/5yr/*.btot.nc"
     measures: "/archive/ens/CMIP7/ESM4/DECK/ESM4.5-landbridge-newsun/gfdl.ncrc6-intel25-prod-openmp/pp/land/land.static.nc"
