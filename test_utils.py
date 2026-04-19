@@ -3,6 +3,8 @@ import numpy  as np
 import xarray as xr
 import utils  as ut
 
+# TODO: add tests for findTimeCoord, findLatitudeCoord, findLongitudeCoord
+
 class TestParseLevels(unittest.TestCase):
 
 #     def test_empty_input(self):

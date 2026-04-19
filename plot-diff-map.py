@@ -95,7 +95,7 @@ def titleText(e0,e1):
         season0 = f',{e0["season"]}'
         season1 = f',{e1["season"]}'
         seasonA = ''
-    t = f'{dsTitle(e1["ds"],"exp1")}{years1}{season1}-{dsTitle(e0["ds"],"exp0")}{years0}{season0} {yearsA}{seasonA}'
+    t = f'{dsTitle(e0["ds"],"exp0")}{years0}{season0}-{dsTitle(e1["ds"],"exp1")}{years1}{season1} {yearsA}{seasonA}'
     return t
 
 def subTitleText(e0,e1):
@@ -137,7 +137,7 @@ class ChainMap1(ChainMap):
         return None
 
 # ===-----------------------------------------------------------------------===
-# parse command-line arguments
+# MARK: parse command-line arguments
 parser = argparse.ArgumentParser(description='plot a map of differences between two experiments')
 parser.add_argument('-v','--verbose', dest='verb',
     help='increase verbosity', action='count', default=0)
@@ -147,7 +147,10 @@ parser.add_argument(
 parser.add_argument('--dpi',
     help='resolution for saved raster figures', type=int, default=150)
 parser.add_argument('file', metavar='FILENAME.yaml',
-    help='plot configuration file, in yaml format',
+    help='''
+        plot configuration file, in yaml format. If the file name is "-" then
+        the script reads from standard input.
+        ''',
     type=argparse.FileType('r'), default=sys.stdin)
 args=parser.parse_args()
 
@@ -230,7 +233,7 @@ for experiment in config['experiments']:
     # form the list of the experiments
     expList.append(expDict)
 
-diff = expList[1]['ave'] - expList[0]['ave']
+diff = expList[0]['ave'] - expList[1]['ave']
 
 # MARK: statistics
 # ===-----------------------------------------------------------------------===

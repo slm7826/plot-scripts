@@ -1,6 +1,7 @@
 import re
 import numpy as np
 import xarray as xr
+import cftime
 
 # ===-----------------------------------------------------------------------===
 def parseLevels(s):
@@ -53,11 +54,64 @@ def parseRange(r):
         start,stop=stop,start
     return (start,stop)
 
+# ===-----------------------------------------------------------------------===
+def findTimeCoord(ds):
+    '''
+    Given an xarray data set or variable, finds and returns the 1D time coordinate
+
+    Parameters:
+    -----------
+    ds: xarray dataset or variable
+    '''
+    for c in ds.coords:
+        if isinstance(ds[c].values[0],cftime.datetime):
+            return c
+    return None
+
+# ===-----------------------------------------------------------------------===
+def findLatitudeCoord(ds):
+    '''
+    Given an xarray data set or variable, finds and returns the 1D latititude coordinate
+
+    Parameters:
+    -----------
+    ds: xarray dataset or variable
+
+    see https://cf-convention.github.io/Data/cf-conventions/cf-conventions-1.13/cf-conventions.html#latitude-coordinate
+    '''
+    for c in ds.coords:
+        if ('units' in c.attrs) and (c.units in ['degree_north', 'degree_N', 'degrees_N', 'degreeN', 'degreesN']):
+            return c
+        elif ('standard_name' in c.attrs) and (c.standard_name == 'latitude'):
+            return c
+        elif ('axis' in c.attrs) and (c.axis == 'Y'):
+            return c
+    return None
+
+# ===-----------------------------------------------------------------------===
+def findLongitudeCoord(ds):
+    '''
+    Given an xarray data set or variable, finds and returns the longitude coordinate
+
+    Parameters:
+    -----------
+    ds: xarray dataset or variable
+
+    see https://cf-convention.github.io/Data/cf-conventions/cf-conventions-1.13/cf-conventions.html#longitude-coordinate
+    '''
+    for c in ds.coords:
+        if ('units' in c.attrs) and (c.units in ['degree_east', 'degree_E', 'degrees_E', 'degreeE', 'degreesE']):
+            return c
+        elif ('standard_name' in c.attrs) and (c.standard_name == 'longitude'):
+            return c
+        elif ('axis' in c.attrs) and (c.axis == 'X'):
+            return c
+    return None
 
 # ===-----------------------------------------------------------------------===
 def getBounds(ds,coordName):
     '''
-    Given an xarray data set and the name of a coordinate, returns an array of bound
+    Given an xarray data set and the name of a coordinate, returns an array of bounds
     for this coordinate variable.
 
     The bounds are taken from the coordinate variable attributes, or

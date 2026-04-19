@@ -27,6 +27,7 @@ options:
   -v, --verbose         increase verbosity
   -s FILENAME, --save FILENAME
                         save plot to file (pdf, png, ...) instead of plotting it on screen.
+                        If the file name is "-" then the script reads from standard input
   --dpi DPI             resolution for saved raster figures
 ```
 
@@ -40,8 +41,8 @@ var: t_ref
 levels: "-2:2:0.2, del(0)"
 colormap: RdBu_r
 experiments:
-  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
   - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
 ```
 ### Structure of YAML configuration file
 
@@ -49,10 +50,10 @@ Some of the options can be specified either in the common section, or for each
 of the experiments individually. If an option is set for the specific experiment (e.g.
 `scale` of the variable), then it is used to process this experiment data,
 otherwise the option from the common section is used; if neither is set then the default
-is used. For example, `season` could be `DJF` for the first and `JJA` for the
+is used. For example, `season` could be `JJA` for the first and `DJF` for the
 second experiment, in which case the average JJA-DJF difference will be calculated and
 plotted. Another example: if "var" is "t_surf" in the first experiment and
-"t_ref" in the second, then the t_ref-t_surf difference will be calculated and
+"t_ref" in the second, then the t_surf-t_ref difference will be calculated and
 plotted.
 
 Configuration options (case sensitive):
@@ -92,8 +93,8 @@ var: t_ref
 levels: "-2:2:0.2, del(0)"
 colormap: RdBu_r
 experiments:
-  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
   - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
 EOF
 ```
 
@@ -106,8 +107,8 @@ colormap: RdBu_r
 season: July
 projection: Robinson
 experiments:
-  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
   - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
 EOF
 ```
 
@@ -122,8 +123,8 @@ levels: "-2:2:0.2"
 colormap: RdBu_r
 measureFile: /archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/land.static.nc
 experiments:
-  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/ts/monthly/1yr/land.200*.t_ref.nc"
   - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/land/ts/monthly/1yr/land.200*.t_ref.nc"
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/land/ts/monthly/1yr/land.200*.t_ref.nc"
 EOF
 ```
 
@@ -136,8 +137,8 @@ units: "mm/day"
 levels: "-2:2:0.2"
 colormap: RdBu
 experiments:
-  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.precip.nc"
   - files: "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.precip.nc"
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.precip.nc"
 EOF
 ```
 
@@ -147,10 +148,10 @@ EOF
 levels: "-2:2:0.2"
 colormap: RdBu_r
 experiments:
-  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_surf.nc"
-    var: t_surf
   - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
     var: t_ref
+  - files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_surf.nc"
+    var: t_surf
 EOF
 ```
 
@@ -162,8 +163,8 @@ levels: "-2:2:0.2"
 colormap: RdBu_r
 season: JJAS
 experiments:
-  - files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
   - files:    "/archive/slm/am5/am5f12e0r1/c96L65_am5f12e0r1_amip_noLam/gfdl.ncrc5-intel25-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
+  - files:    "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
 EOF
 ```
 
@@ -171,12 +172,12 @@ EOF
 ```bash
 ./plot-diff-map.py -v - <<EOF
 var: t_ref
-levels: "-50:50:5"
+levels: "-50:50:5, -2:2:1, del(0)"
 colormap: RdBu_r
 files: "/archive/oar.gfdl.am5/am5/am5f12e0r1/c96L65_am5f12e0r1_amip/gfdl.ncrc5-deploy-prod-openmp/pp/atmos/ts/monthly/1yr/atmos.200*.t_ref.nc"
 experiments:
-  - season: DJF
   - season: JJA
+  - season: DJF
 EOF
 ```
 
