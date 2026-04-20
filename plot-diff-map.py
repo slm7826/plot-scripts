@@ -98,6 +98,7 @@ def titleText(e0,e1):
     t = f'{dsTitle(e0["ds"],"exp0")}{years0}{season0}-{dsTitle(e1["ds"],"exp1")}{years1}{season1} {yearsA}{seasonA}'
     return t
 
+# ===-----------------------------------------------------------------------===
 def subTitleText(e0,e1):
     '''
     Given two dictionaries with experiment parameters, construct a
@@ -243,8 +244,9 @@ diff = expList[0]['ave'] - expList[1]['ave']
 # otherwise calculate it from the grid cells
 ds  = expList[0]['ds'] # use first of the experiments to get the measures, assuming they are the same for both
 var = expList[0]['var']
-areaName = getAreaName(var)
-if areaName:
+
+areaName = env['areaName'] or getAreaName(var)
+if areaName and (areaName != 'computed'):
     if not env['measureFile']:
         raise ValueError(f'No measure files specified, but they are required for calulation of statistics')
     measures = openFiles(env['measureFile'])
@@ -310,12 +312,12 @@ if title.lower() != 'none':
 left = 0.0; right=1.0; top = 1.01
 v = expList[0]['var']
 ax.text(left, top, subTitleText(expList[0],expList[1]),
-        fontsize='small',
+#         fontsize='small',
         horizontalalignment='left',
         verticalalignment='bottom',
         transform=ax.transAxes)
 ax.text(right, top, f'AVE={AVE:.3g}, RMS={RMS:.3g}',
-        fontsize='small',
+#         fontsize='small',
         horizontalalignment='right',
         verticalalignment='bottom',
         transform=ax.transAxes)
