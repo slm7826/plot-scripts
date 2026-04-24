@@ -27,7 +27,6 @@ xr.set_options(use_new_combine_kwarg_defaults=True)
 # TODO: Add configuration verification
 # TODO: Add var titles to configuration, to show user-defined names of the variables
 # TODO: Add time operations average (default), max, min, average annual max, average annual mean
-# TODO: Add ability to specify the name of the area, or force using computed area
 # TODO: Add ability to perform vertical averaging (or integral)
 # TODO: Print out more statistics: min/max/quantiles, anything else?
 # TODO: Add ability to save data
@@ -42,7 +41,7 @@ def openFiles(files):
     Given list of patterns, open files and return Xarray data set
     files: list of pattern or a single pattern
     '''
-    report(f'Locating input files matching pattern(s) "{files}"')
+    report(f'\nLocating input files matching pattern(s) "{files}"')
     if type(files) is str:
         patternList = [files]
     else:
@@ -52,7 +51,7 @@ def openFiles(files):
        fileNames += sorted(glob.glob(f))
 
     if len(fileNames) == 0:
-        die(f'Found no files that match pattern(s) "{files}"')
+        raise FileNotFoundError(f'Found no files that match pattern(s) "{files}"')
 
     if args.verb > 1:
         print('input file(s):')
@@ -62,7 +61,6 @@ def openFiles(files):
 
     timeCoder = xr.coders.CFDatetimeCoder(use_cftime=True)
     return xr.open_mfdataset(fileNames,decode_times=timeCoder)
-
 
 # ===-----------------------------------------------------------------------===
 def titleText(e0,e1):
@@ -104,7 +102,7 @@ def subTitleText(e0,e1):
     Given two dictionaries with experiment parameters, construct a
     reasonable title text describing the difference map.
     '''
-    s = ''; v0 = e0['var']; v1 = e1['var'];
+    s = ''; v0 = e0['variable']; v1 = e1['variable'];
     if v0.name == v1.name:
         # assuming long_name and units are the same in both experiments
         s += f'{v0.name}'
@@ -148,18 +146,40 @@ parser.add_argument(
 parser.add_argument('--dpi',
     help='resolution for saved raster figures', type=int, default=150)
 parser.add_argument('file', metavar='FILENAME.yaml',
-    help='''
-        plot configuration file, in yaml format. If the file name is "-" then
-        the script reads from standard input.
-        ''',
+    help=''' plot configuration file, in yaml format. If the file name is "-"
+        then the script reads from standard input. ''',
     type=argparse.FileType('r'), default=sys.stdin)
+
+# arguments that can be used to override options in config file:
+group1 = parser.add_argument_group('extras','arguments that can be used to override options in the YAML cinfig file')
+argList = {
+    'variable'     : 'variable to plot',
+    'levels'       : 'levels for plotting',
+    'projection'   : 'geographic projection of the map',
+    'colormap'     : 'color map for the plot',
+    'scale'        : 'scaling factor for plotted variable',
+    'units'        : 'units of plotted variable',
+    'years'        : 'years to include in the averaging',
+    'season'       : 'season to plot',
+    'measureFile'  : '''file that conains measures for spatial averaging, i.e.
+        areas for each of grid cells''',
+    'areaVariable' : '''name of the variable from measureFile that is used as
+        area for the spatial averaging. Use it if you want the statistics to be
+        normalized but the area different from the one specified in "cell_measures"
+        attrubute. Use "computed" if you want to use full areas of the grid cells,
+        as defined by their lat-lon geometry. '''
+}
+
+for key,value in argList.items():
+    group1.add_argument(f'--{key}', help=value)
+
 args=parser.parse_args()
 
 # ===-----------------------------------------------------------------------===
 if args.verb > 0:
     print('using pakages:')
     for package in np,xr,yaml,mpl,cartopy:
-         print('    {:>12} : {}'.format(package.__name__,package.__version__))
+         print(f'{package.__name__:>12} : {package.__version__}')
 
 
 # ===-----------------------------------------------------------------------===
@@ -184,14 +204,23 @@ config = yaml.safe_load(args.file)
 # array, which will be handled later)
 env0 = env0.new_child({x: config[x] for x in config if x not in ['experiments']})
 
+# add command-line arguments to the environment: they override the root in YAML configuration
+env0 = env0.new_child()
+
+pars = vars(args)
+for key in argList.keys():
+    if pars[key]:
+        env0[key] = pars[key]
+
 # print configuration, for information
 if args.verb > 0:
+    print('\nplot parameters:')
     for item in env0:
-        print(f'{item:>10} : {env0[item]}')
+        print(f'{item:>12} : {env0[item]}')
 
 # check that we have two and only two data sets
 if len(config['experiments']) != 2:
-    die(f'Need two experiments in configuration YAML, got {len(config["experiments"])}')
+    raise KeyError(f'Need two experiments in configuration YAML, got {len(config["experiments"])}')
 
 # ===-----------------------------------------------------------------------===
 # accumulate and process data
@@ -208,10 +237,10 @@ for experiment in config['experiments']:
     expDict['ds'] = ds = openFiles(env['files'])
 
     # pick the variable by name
-    varName = env['var']
+    varName = env['variable']
     if not varName:
-        die('variable name not specified')
-    expDict['var'] = var = ds[varName]
+        raise KeyError('variable name not specified')
+    expDict['variable'] = var = ds[varName]
 
     # TODO: do not assume that time is the first dimension of the variable
     time = var.coords[var.dims[0]]
@@ -243,12 +272,12 @@ diff = expList[0]['ave'] - expList[1]['ave']
 # find area: if it is present in the cell_measures, then use it (from "measures" data set),
 # otherwise calculate it from the grid cells
 ds  = expList[0]['ds'] # use first of the experiments to get the measures, assuming they are the same for both
-var = expList[0]['var']
+var = expList[0]['variable']
 
 areaName = env['areaName'] or getAreaName(var)
 if areaName and (areaName != 'computed'):
     if not env['measureFile']:
-        raise ValueError(f'No measure files specified, but they are required for calulation of statistics')
+        raise KeyError(f'No measure files specified, but they are required for calulation of statistics')
     measures = openFiles(env['measureFile'])
     area = measures[areaName]
 else:
@@ -267,7 +296,7 @@ AVE = weightedDiff.mean().values
 STD = weightedDiff.std().values
 maskedDiff = np.ma.masked_invalid(diff.values)
 RMS = np.sqrt(np.ma.average(maskedDiff**2,weights=area.values))
-print(f'Average = {AVE:.5g}, RMS = {RMS:.5g}, STD = {STD:.5g}')
+print(f'\nAverage = {AVE:.5g}, RMS = {RMS:.5g}, STD = {STD:.5g}')
 
 # ===-----------------------------------------------------------------------===
 # plotting the difference
@@ -310,14 +339,12 @@ if title.lower() != 'none':
 
 # add the name, long name, and units of the variable to the plot
 left = 0.0; right=1.0; top = 1.01
-v = expList[0]['var']
+v = expList[0]['variable']
 ax.text(left, top, subTitleText(expList[0],expList[1]),
-#         fontsize='small',
         horizontalalignment='left',
         verticalalignment='bottom',
         transform=ax.transAxes)
 ax.text(right, top, f'AVE={AVE:.3g}, RMS={RMS:.3g}',
-#         fontsize='small',
         horizontalalignment='right',
         verticalalignment='bottom',
         transform=ax.transAxes)
