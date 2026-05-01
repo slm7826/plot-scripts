@@ -238,7 +238,7 @@ def seasonalMeanFromMonthly(ds, seasonName):
     m0 = findSubList(season,months)
     m1 = findSubList(season,months,reverse=True)+len(season)
     if m0 == -1 or m1 == -1:
-        raise ValueError(f"Season's {seasonName} months {season} are not forund in time line")
+        raise ValueError(f"Season's {seasonName} months {season} are not found in the time line")
 
     # skip incomplete seasons at the beginning and the end of the time series
     ds1  = ds[m0:m1]
@@ -251,9 +251,11 @@ def seasonalMeanFromMonthly(ds, seasonName):
 #     print("ds1:",ds1[timeName])
 #     print("ds2:",ds2[timeName])
 
-    # calculate the average
-    ave = (ds2 * ds2[timeName].dt.days_in_month).sum(dim=timeName, keep_attrs=True)/ \
-            ds2[timeName].dt.days_in_month.sum(dim=timeName)
+    # calculate the average:
+    wgt = ds2.weighted(ds2[timeName].dt.days_in_month) # weighted object
+    ave = wgt.mean(dim=timeName, keepAttrs=True) # mean of weighted object properly takes into account missing data
+#     ave = (ds2 * ds2[timeName].dt.days_in_month).sum(dim=timeName, keep_attrs=True)/ \
+#             ds2[timeName].dt.days_in_month.sum(dim=timeName)
 
     return ave
 
