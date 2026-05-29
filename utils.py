@@ -253,7 +253,7 @@ def seasonalMeanFromMonthly(ds, seasonName):
 
     # calculate the average:
     wgt = ds2.weighted(ds2[timeName].dt.days_in_month) # weighted object
-    ave = wgt.mean(dim=timeName, keepAttrs=True) # mean of weighted object properly takes into account missing data
+    ave = wgt.mean(dim=timeName, keep_attrs=True) # mean of weighted object properly takes into account missing data
 #     ave = (ds2 * ds2[timeName].dt.days_in_month).sum(dim=timeName, keep_attrs=True)/ \
 #             ds2[timeName].dt.days_in_month.sum(dim=timeName)
 
