@@ -78,7 +78,7 @@ def titleText(e0,e1):
     if e1['years'] == e0['years']:
         # comparing the same period
         ys,ye = e0['years']
-        years0 = years1 = ''; yearsA = f'[{ys}:{ye}]'
+        years0 = years1 = ''; yearsA = f'\nyears {ys}-{ye}'
     else:
         # different periods
         ys,ye = e0['years']; years0 = f'[{ys}:{ye}]'
@@ -93,7 +93,7 @@ def titleText(e0,e1):
         season0 = f',{e0["season"]}'
         season1 = f',{e1["season"]}'
         seasonA = ''
-    t = f'{dsTitle(e0["ds"],"exp0")}{years0}{season0}-{dsTitle(e1["ds"],"exp1")}{years1}{season1} {yearsA}{seasonA}'
+    t = f'{dsTitle(e0["ds"],"exp0")}{years0}{season0} - {dsTitle(e1["ds"],"exp1")}{years1}{season1} {yearsA}{seasonA}'
     return t
 
 # ===-----------------------------------------------------------------------===
@@ -296,7 +296,7 @@ AVE = weightedDiff.mean().values
 STD = weightedDiff.std().values
 maskedDiff = np.ma.masked_invalid(diff.values)
 RMS = np.sqrt(np.ma.average(maskedDiff**2,weights=area.values))
-print(f'\nAverage = {AVE:.5g}, RMS = {RMS:.5g}, STD = {STD:.5g}')
+print(f'\nAverage = {AVE:.5g}, RMS = {RMS:.5g}, STD = {STD:.5g} MIN={maskedDiff.min():.5g} MAX={maskedDiff.max():.5g}')
 
 # ===-----------------------------------------------------------------------===
 # plotting the difference
