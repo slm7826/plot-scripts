@@ -6,11 +6,42 @@ To run unit tests:
 python -m unittest
 ```
 
-## `plot-diff-map.py` --- plotting seasonal or annual differences.
+## Time averaging
+
+The question of what is the proper way to calculate time average becomes less obvious
+if one considers seasons, different lengths of months for monthly data, missing data, and
+time-varying areas.
+
+For example, suppose we need to calculate a DJF mean of the sensible heat flux
+from croplands, using monthly means as an input. First, we need to exclude the
+incomplete seasons, so for the typical case of the input monthly data set
+starting on January, the first month included in the averaging should be
+December of the first year, and the last --- February of the last year.
+
+Likewise, we probably also need to exclude --- for each location --- seasons
+where part of the data may be missing, e.g because there were no cropland at
+that month (which can easily be happening for croplands in DJF). In more general
+form, we might want to exclude the seasons with the fraction of missing data
+above certain threshold.
+
+Finally, the area of croplands is changing in time: should the time average for
+each point be weighted with the time-dependent area, or should all seasons
+contribute equally to the time averages? In the case of the area-weighted
+average the result will tend to be biased toward modern era, because the area of
+croplands generally increases in time.
+
+After all of that is said and done, what area should we use to calculate
+area-weighted global statistics, e.g. global mean?
+
+If the purpose is to calculate the geographical map of differences between two
+experiments (or two periods of the same experiment), what area should be used to
+calculate the global statistics of the difference?
+
+## `plot-diff-map.py` --- plot seasonal or annual differences.
 
 This script allows to plot a map of differences: between two experiments, or
 between two periods of the same run, or between different seasons, or between
-different varuables. The input data and the parameters of the plot are specified
+different variables. The input data and the parameters of the plot are specified
 in the input YAML file, except few settings such as verbosity level or
 destination of the plot.
 
