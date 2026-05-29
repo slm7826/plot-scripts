@@ -6,37 +6,6 @@ To run unit tests:
 python -m unittest
 ```
 
-## Time averaging
-
-The question of what is the proper way to calculate time average becomes less obvious
-if one considers seasons, different lengths of months for monthly data, missing data, and
-time-varying areas.
-
-For example, suppose we need to calculate a DJF mean of the sensible heat flux
-from croplands, using monthly means as an input. First, we need to exclude the
-incomplete seasons, so for the typical case of the input monthly data set
-starting on January, the first month included in the averaging should be
-December of the first year, and the last --- February of the last year.
-
-Likewise, we probably also need to exclude --- for each location --- seasons
-where part of the data may be missing, e.g because there were no cropland at
-that month (which can easily be happening for croplands in DJF). In more general
-form, we might want to exclude the seasons with the fraction of missing data
-above certain threshold.
-
-Finally, the area of croplands is changing in time: should the time average for
-each point be weighted with the time-dependent area, or should all seasons
-contribute equally to the time averages? In the case of the area-weighted
-average the result will tend to be biased toward modern era, because the area of
-croplands generally increases in time.
-
-After all of that is said and done, what area should we use to calculate
-area-weighted global statistics, e.g. global mean?
-
-If the purpose is to calculate the geographical map of differences between two
-experiments (or two periods of the same experiment), what area should be used to
-calculate the global statistics of the difference?
-
 ## `plot-diff-map.py` --- plot seasonal or annual differences.
 
 This script allows to plot a map of differences: between two experiments, or
@@ -108,26 +77,37 @@ plotted. Another example: if "variable" is "t_surf" in the first experiment and
 plotted.
 
 Configuration options (case sensitive):
-- title: string, optional; if absent formed automatically
-- figureWidth: float, optiona, default is 10
-- figureHeight: float, optiona, default is 5
-- projection: string, optional, default is 'PlateCarree'; one of the global
+- `title`: string, optional; if absent formed automatically
+- `figureWidth`: float, optiona, default is 10
+- `figureHeight`: float, optiona, default is 5
+- `projection`: string, optional, default is 'PlateCarree'; one of the global
   [cartopy projections](https://cartopy.readthedocs.io/stable/reference/projections.html)
-- colormap: string, the name of a [matplotlib colormap](https://matplotlib.org/stable/users/explain/colors/colormaps.html), optional, defaults to "rainbow"
-- levels: string (e.g."-2:2:0.2, del(0)"), optional, but typically should be provided
-- variable: string, the name of the variable to plot; naturally the variable of that name must be present in each of the input files
-- scale: float, default is 1.0
-- units: string; if not specified units form the variable attributes are used
-- season: string, default is "ANNUAL". Can be a full name of a month, or abbreviated season name, e.g. DJF, JJA, JSON, etc.
-- measureFile: required if the variable has "area" section in cell_measures attribute; typically one of the "static" files in the post-processin
-- years: range of years (e.g. "1979:2001", inclusive), optional, defaults to the all available in input files
-- experiments: required, array of two experiment/variable/period/season descriptions
-   - files: Unix file mask for the experiment data, required
-   - variable: string, the name of the variable; variable of this name must be present in the input files
-   - season: string, can be different in each experiment, e.g. to calculate JJA-DJF
-   - scale: float, can be different in two experiments
-   - units: string (only units from the first experiment -- or general section -- are used)
-   - years: range of years, optional, can be different in two experiments,
+- `colormap`: string, the name of a [matplotlib colormap](https://matplotlib.org/stable/users/explain/colors/colormaps.html), optional, defaults to "rainbow"
+- `levels`: string (e.g."-2:2:0.2, del(0)"), optional, but typically should be provided
+- `variable`: string, the name of the variable to plot; naturally the variable of
+    that name must be present in each of the input files
+- `scale`: float, optional, default is 1.0
+- `units`: string; if not specified units form the variable attributes are used
+- `season`: string, default is "ANNUAL". Can also be a name of a month (e.g. APR or April), or
+    abbreviated season name: a string of contiguous month initials, e.g. DJF, JJA, JJAS, etc.
+- `measureFile`: file that conains measures for spatial averaging, i.e.
+    areas for each of grid cells. This is required if the variable has "area"
+    section in cell_measures attribute; typically one of the "static" files in
+    the post-processing
+- `areaVariable`: optional, name of the variable from measureFile that is used as
+    area for the spatial averaging. Use it if you want the statistics to be
+    normalized but the area different from the one specified in "cell_measures"
+    attrubute. Use "computed" if you want to use full areas of the grid cells,
+    as defined by their lat-lon geometry.
+- `years`: optional, range of years as a string (e.g. "1979:2001", inclusive), optional,
+    defaults to the all available in input files
+- `experiments`: required, array of two experiment/variable/period/season descriptions
+   - `files`: Unix file mask for the experiment data, required
+   - `variable`: string, the name of the variable; variable of this name must be present in the input files
+   - `season`: string, can be different in each experiment, e.g. to calculate JJA-DJF
+   - `scale`: float, can be different in two experiments
+   - `units`: string (only units from the first experiment -- or general section -- are used)
+   - `years`: range of years, optional, can be different in two experiments,
      defaults to the all years available in the experiment's input files
 
 
@@ -418,3 +398,34 @@ Error message:
   File "src/netCDF4/_netCDF4.pyx", line 7044, in netCDF4._netCDF4.MFDataset.__init__
 ValueError: MFNetCDF4 only works with NETCDF3_* and NETCDF4_CLASSIC formatted files, not NETCDF4
 ```
+
+## Note on time averaging
+
+The question of what is the proper way to calculate time average becomes less obvious
+if one considers seasons, different lengths of months for monthly data, missing data, and
+time-varying areas.
+
+For example, suppose we need to calculate a DJF mean of the sensible heat flux
+from croplands, using monthly means as an input. First, we need to exclude the
+incomplete seasons, so for the typical case of the input monthly data set
+starting on January, the first month included in the averaging should be
+December of the first year, and the last --- February of the last year.
+
+Likewise, we probably also need to exclude --- for each location --- seasons
+where part of the data may be missing, e.g because there were no cropland at
+that month (which can easily be happening for croplands in DJF). In more general
+form, we might want to exclude the seasons with the fraction of missing data
+above certain threshold.
+
+Finally, the area of croplands is changing in time: should the time average for
+each point be weighted with the time-dependent area, or should all seasons
+contribute equally to the time averages? In the case of the area-weighted
+average the result will tend to be biased toward modern era, because the area of
+croplands generally increases in time.
+
+After all of that is said and done, what area should we use to calculate
+area-weighted global statistics, e.g. global mean?
+
+If the purpose is to calculate the geographical map of differences between two
+experiments (or two periods of the same experiment), what area should be used to
+calculate the global statistics of the difference?
