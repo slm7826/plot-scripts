@@ -42,24 +42,44 @@ calculate the global statistics of the difference?
 This script allows to plot a map of differences: between two experiments, or
 between two periods of the same run, or between different seasons, or between
 different variables. The input data and the parameters of the plot are specified
-in the input YAML file, except few settings such as verbosity level or
-destination of the plot.
+in the input YAML file, or on the command line. The YAML configuration file is
+the primary and most flexible way to specify plot parameters, but many options
+can be set on the command line, if that is more convenient.
 
 ```bash
-usage: plot-diff-map.py [-h] [-v] [-s FILENAME] [--dpi DPI] FILENAME.yaml
+usage: plot-diff-map.py [-h] [-v] [-s FILENAME] [--dpi DPI] [--variable VARIABLE] [--levels LEVELS] [--projection PROJECTION] [--colormap COLORMAP] [--scale SCALE] [--units UNITS] [--years YEARS]
+                        [--season SEASON] [--measureFile MEASUREFILE] [--areaVariable AREAVARIABLE]
+                        FILENAME.yaml
 
 plot a map of differences between two experiments
 
 positional arguments:
-  FILENAME.yaml         plot configuration file, in yaml format
+  FILENAME.yaml         plot configuration file, in yaml format. If the file name is "-" then the script reads from standard input.
 
 options:
   -h, --help            show this help message and exit
   -v, --verbose         increase verbosity
   -s FILENAME, --save FILENAME
                         save plot to file (pdf, png, ...) instead of plotting it on screen.
-                        If the file name is "-" then the script reads from standard input
   --dpi DPI             resolution for saved raster figures
+
+extras:
+  arguments that can be used to override options in the YAML cinfig file
+
+  --variable VARIABLE   variable to plot
+  --levels LEVELS       levels for plotting
+  --projection PROJECTION
+                        geographic projection of the map
+  --colormap COLORMAP   color map for the plot
+  --scale SCALE         scaling factor for plotted variable
+  --units UNITS         units of plotted variable
+  --years YEARS         years to include in the averaging
+  --season SEASON       season to plot
+  --measureFile MEASUREFILE
+                        file that conains measures for spatial averaging, i.e. areas for each of grid cells
+  --areaVariable AREAVARIABLE
+                        name of the variable from measureFile that is used as area for the spatial averaging. Use it if you want the statistics to be normalized but the area different from the one
+                        specified in "cell_measures" attrubute. Use "computed" if you want to use full areas of the grid cells, as defined by their lat-lon geometry.
 ```
 
 For example:
